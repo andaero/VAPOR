@@ -218,7 +218,7 @@ validation_y[np.isnan(validation_y)] = 0
 class SaveBestModel(tf.keras.callbacks.Callback):
     def __init__(self, save_best_metric='val_root_mean_squared_error'):
         self.save_best_metric = save_best_metric
-        self.lowestError = 627
+        self.lowestError = 615
     def on_epoch_end(self, epoch, logs=None):
         #print(logs[self.save_best_metric])
         if(logs[self.save_best_metric] < self.lowestError):
@@ -231,7 +231,7 @@ save_best_model = SaveBestModel()
 EPOCHS = 100
 BatchSizes = [64]
 learning_rs = [0.001, 0.005]
-layers = [5]
+layers = [2]
 dense = 2;
 dBatchSize = 1;
 
