@@ -18,6 +18,7 @@ from scipy import stats
 from kerasncp import wirings
 from kerasncp.tf import LTCCell
 import seaborn as sns
+from datetime import datetime
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -218,7 +219,7 @@ validation_y[np.isnan(validation_y)] = 0
 class SaveBestModel(tf.keras.callbacks.Callback):
     def __init__(self, save_best_metric='val_root_mean_squared_error'):
         self.save_best_metric = save_best_metric
-        self.lowestError = 615
+        self.lowestError = 608
     def on_epoch_end(self, epoch, logs=None):
         #print(logs[self.save_best_metric])
         if(logs[self.save_best_metric] < self.lowestError):
@@ -228,25 +229,28 @@ class SaveBestModel(tf.keras.callbacks.Callback):
 
 save_best_model = SaveBestModel()
 
-EPOCHS = 100
-BatchSizes = [64]
-learning_rs = [0.001, 0.005]
-layers = [2]
+EPOCHS = 50
+BatchSizes = [64, 32]
+learning_rs = [0.0005]
+layers = [2,3]
 dense = 2;
 dBatchSize = 1;
 
 
 inter = 64
 command_neurons = 64
+sensory_fanout = 34
+inter_fanout = 34
+motor_fanin = 40
 wiring = wirings.NCP(
   inter_neurons=inter,  # Number of inter neurons
   command_neurons=command_neurons,  # Number of command neurons
   motor_neurons=1,  # Number of motor neurons
-  sensory_fanout=24,  # How many outgoing synapses has each sensory neuron
-  inter_fanout=24,  # How many outgoing synapses has each inter neuron
-  recurrent_command_synapses=24,  # Now many recurrent synapses are in the
-  # command neuron layer
-  motor_fanin=30,  #  How many incoming syanpses has each motor neuron
+  sensory_fanout=sensory_fanout,  # How many outgoing synapses has each sensory neuron
+  inter_fanout=inter_fanout,  # How many outgoing synapses has each inter neuron
+  recurrent_command_synapses=34,  # Now many recurrent synapses are in the
+  # command neuron  layer
+  motor_fanin=motor_fanin,  #  How many incoming syanpses has each motor neuron
 )
 rnn_cell = LTCCell(wiring)
 
@@ -263,8 +267,8 @@ for BatchSize in BatchSizes:
     for learning_r in learning_rs:
         for layer in layers:
             model = Sequential()
-            NAME = f"V1-Dense Layers-{dense}-SeqLen-{seq_len}Filters-{BatchSize}-Layers{layer}-Learning Rate-{learning_r}-Time-{int(time.time())}"
-
+            time = datetime.now().strftime("%m-%d-%H-%M-%S")
+            NAME = f"Liquid-LSTM-Dense Layers-{dense}-Command N-{command_neurons}-inter n-{inter}Filters-{BatchSize}-Layers{layer}-Learning Rate-{learning_r}-Time-{time}"
             model.add(InputLayer(input_shape=train_x.shape[1:]))
             model.add(RNN(rnn_cell, return_sequences=True))
             # LSTM ONLY
@@ -298,6 +302,7 @@ for BatchSize in BatchSizes:
 
             model.summary()
 
+            #plot_wiring()
             tensorboard = TensorBoard(log_dir=f'SupplyLogsv3/{NAME}', histogram_freq=1, write_images=True) #tensorboard --logdir=SupplyLogsv3
 
             filepath = "eNet-{epoch:02d}-{mean_absolute_percentage_error:.3f}"
