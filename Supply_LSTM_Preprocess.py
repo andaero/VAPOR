@@ -20,7 +20,7 @@ from scipy import stats
 #import in supply csv + date time
 
 # specifying the path to csv files
-path = "Data/PVGenerator"
+path = "Data/PVGenProcessed"
 
 # csv files in the path
 files = glob.glob(path + "/*.csv")
@@ -29,21 +29,26 @@ importSupplyDf = pd.read_csv("Data/Template.csv", parse_dates=["DateTime"], usec
 for file in files:
     print(file)
     df = pd.read_csv(file, parse_dates=["DateTime"], usecols=["DateTime", "RealPower"])
-    df.fillna(method="ffill",inplace=True)
-    print(df)
+    df["RealPower"] = df["RealPower"].clip(lower=0)
+    # importSupplyDf = importSupplyDf.set_index(["DateTime"]).add(df.set_index["DateTime"]).reset_index()
     # importSupplyDf["RealPower"] = importSupplyDf["RealPower"] + df["RealPower"]
     #importSupplyDf.fillna(0,inplace=True)
+
+    # importSupplyDf = importSupplyDf.merge(df,on=["DateTime"],how="left").sum(axis=1)
+
     importSupplyDf = importSupplyDf.merge(df,on=["DateTime"],how="left",suffixes=("_1",False))
-    importSupplyDf.fillna(method="ffill",inplace=True)
+    importSupplyDf.fillna(0, inplace=True)
     print(importSupplyDf)
+    print("--------------")
 
 print(importSupplyDf.head(10))
 
 #importSupplyDf = pd.read_csv("Data/DemandCharge.csv", parse_dates=["DateTime"], usecols=["DateTime", "RealPower"], ) #15 min avg in kWatts
 #import temperature + date time
 #Convert 15 min increments to 1hr for supplyDf + tempDf
-supplyDf = importSupplyDf.set_index("DateTime").resample('H').sum()
-#remove any outliers
+# supplyDf = importSupplyDf.set_index("DateTime").resample('H').sum()
+supplyDf = importSupplyDf.set_index("DateTime").resample('H').sum()#remove any outliers
 #supplyDf = supplyDf[(np.abs(stats.zscore(supplyDf)) < 3).all(axis=1)]
+
 print(supplyDf)
-supplyDf.to_csv("supplyDatav2.csv")
+supplyDf.to_csv("Data/supplyDatav3.csv")
