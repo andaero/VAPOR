@@ -36,12 +36,12 @@ drop_remainder = True
 
 #import in supply csv + date time
 
-importSupplyDf = pd.read_csv("../Data/supplyDatav2.csv", parse_dates=["DateTime"])
+importSupplyDf = pd.read_csv("../Data/supplyDatav3.csv", parse_dates=["DateTime"])
 column_list = list(importSupplyDf)
 column_list.remove("DateTime")
 # importSupplyDf[column_list] = importSupplyDf[column_list].abs()
 # importSupplyDf[column_list] = importSupplyDf[column_list]
-importSupplyDf[column_list] = importSupplyDf[column_list].clip(lower=0) #replace neg nums w 0
+# importSupplyDf[column_list] = importSupplyDf[column_list].clip(lower=0) #replace neg nums w 0
 importSupplyDf["SupplyTotal"] = importSupplyDf[column_list].sum(axis=1) #add all rows except datetime
 print(importSupplyDf)
 supplyDf = importSupplyDf[["DateTime","SupplyTotal"]].copy()
@@ -87,6 +87,7 @@ df = df.dropna()
 
 
 df.columns = ["Date","Supply","Year","Month","Day","Hour","Minute", "DHI", "DNI", "GHI", "Temp"]
+df['Weekday'] = df["Date"].dt.weekday
 
 print(df.head())
 print(df.dtypes)
@@ -102,7 +103,7 @@ df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
 
 #Create a target column for supply in future
 future = 24 #predicting 24 hours in the future
-seq_len = 48 #take the last 24 hours of info
+seq_len = 24 #take the last 24 hours of info
 
 df["target"] = df["Supply"].shift(-future)
 df = df.dropna()
@@ -115,22 +116,23 @@ print(df.shape)
 #Figuring out which parts of data to use for prediction vs results
 print("Moving on to sorting data")
 # Scale the nums to be between 0-1
-scaler = MinMaxScaler()
-df["Supply"] = scaler.fit_transform(df["Supply"].values.reshape(-1,1))
-df["Temp"] = scaler.fit_transform(df["Temp"].values.reshape(-1,1))
-df["DHI"] = scaler.fit_transform(df["DHI"].values.reshape(-1,1))
-df["DNI"] = scaler.fit_transform(df["DNI"].values.reshape(-1,1))
-df["GHI"] = scaler.fit_transform(df["GHI"].values.reshape(-1,1))
+def scaleData():
+    scaler = MinMaxScaler()
+    df["Supply"] = scaler.fit_transform(df["Supply"].values.reshape(-1,1))
+    df["Temp"] = scaler.fit_transform(df["Temp"].values.reshape(-1,1))
+    df["DHI"] = scaler.fit_transform(df["DHI"].values.reshape(-1,1))
+    df["DNI"] = scaler.fit_transform(df["DNI"].values.reshape(-1,1))
+    df["GHI"] = scaler.fit_transform(df["GHI"].values.reshape(-1,1))
 
 
-#df["target"] = scaler.fit_transform(df["Temp"].values.reshape(-1,1))
+    #df["target"] = scaler.fit_transform(df["Temp"].values.reshape(-1,1))
 
-# df["Weekday"] = scaler.fit_transform(df["Weekday"].values.reshape(-1,1))
-# df["Month"] = scaler.fit_transform(df["Weekday"].values.reshape(-1,1))
-# df["Day"] = scaler.fit_transform(df["Weekday"].values.reshape(-1,1))
-# df["Hour"] = scaler.fit_transform(df["Weekday"].values.reshape(-1,1))
+    df["Weekday"] = scaler.fit_transform(df["Weekday"].values.reshape(-1,1))
+    df["Month"] = scaler.fit_transform(df["Month"].values.reshape(-1,1))
+    df["Day"] = scaler.fit_transform(df["Day"].values.reshape(-1,1))
+    df["Hour"] = scaler.fit_transform(df["Hour"].values.reshape(-1,1))
 
-
+scaleData()
 
 # ---- PLOT FOR ENERGY PRODUCTION + GHI ---------
 
@@ -158,30 +160,38 @@ df["GHI"] = scaler.fit_transform(df["GHI"].values.reshape(-1,1))
 
 
 #Creating main_df and validation_df
-times = df.index.values
-last_10 = df.index.values[-int(0.1*len(times))]
-validation_df = df[(df.index >= last_10)]
-main_df = df[(df.index< last_10)]
+def split_main_validation_df():
+    times = df.index.values
+    last_10 = df.index.values[-int(0.1*len(times))]
+    validation_df = df[(df.index >= last_10)]
+    main_df = df[(df.index< last_10)]
+    return main_df,validation_df
 
-print(validation_df)
-print(main_df)
+main_df, validation_df = split_main_validation_df()
+# print(validation_df)
+# print(main_df)
 
 # main_df.replace([np.inf, -np.inf], np.nan, inplace=True)
 # validation_df.replace([np.inf, -np.inf], np.nan, inplace=True)
 main_df = main_df.dropna()
 validation_df = validation_df.dropna()
 
+def dataframe_to_csv(df, filepath):
+    df.to_csv(filepath)
+
+# dataframe_to_csv(main_df,"main_df_scaled_v3.csv")
+# dataframe_to_csv(validation_df,"validation_df_scaled_v3.csv")
 
 def preprocess(df):
 
     sequential_data = []  # this is a list that will CONTAIN the sequences
-    prev_days = deque(maxlen=seq_len)  # These will be our actual sequences. They are made with deque, which keeps the maximum length by popping out older values as new ones come in
+    prev_days = deque(maxlen=seq_len)  # Actual seq made with deque, keeps the maximum length by popping out older values as new ones come in
 
     for i in df.to_numpy():  # iterate over the values
         prev_days.append([n for n in i[:-1]])  # store all but the target
         if len(prev_days) == seq_len:  # make sure we have 48 seq
             sequential_data.append([np.array(prev_days), i[-1]])
-    random.shuffle(sequential_data)  # shuffle for good measure.
+    random.shuffle(sequential_data)  # shuffle
     X = []
     y = []
 
@@ -204,8 +214,8 @@ train_y = np.asarray(train_y)
 validation_x = np.asarray(validation_x)
 validation_y = np.asarray(validation_y)
 
-# print(train_x[:1])
-print(train_y[:10])
+print(train_x[:1])
+print(train_y[:1])
 print(train_x.shape, train_y.shape, validation_x.shape, validation_y.shape)
 #Replacing any nan values w 0
 train_x[np.isnan(train_x)] = 0
@@ -219,7 +229,7 @@ validation_y[np.isnan(validation_y)] = 0
 class SaveBestModel(tf.keras.callbacks.Callback):
     def __init__(self, save_best_metric='val_root_mean_squared_error'):
         self.save_best_metric = save_best_metric
-        self.lowestError = 608
+        self.lowestError = 600
     def on_epoch_end(self, epoch, logs=None):
         #print(logs[self.save_best_metric])
         if(logs[self.save_best_metric] < self.lowestError):
@@ -229,26 +239,27 @@ class SaveBestModel(tf.keras.callbacks.Callback):
 
 save_best_model = SaveBestModel()
 
-EPOCHS = 50
-BatchSizes = [64, 32]
+EPOCHS = 60
+BatchSizes = [64,32]
 learning_rs = [0.0005]
-layers = [2,3]
+layers = [2]
 dense = 2;
 dBatchSize = 1;
+dropout = 0.2;
 
-
-inter = 64
-command_neurons = 64
-sensory_fanout = 34
-inter_fanout = 34
-motor_fanin = 40
+inter = 32
+command_neurons = 32
+sensory_fanout = 16
+inter_fanout = 16
+motor_fanin = 16
+recurrent = 20
 wiring = wirings.NCP(
   inter_neurons=inter,  # Number of inter neurons
   command_neurons=command_neurons,  # Number of command neurons
   motor_neurons=1,  # Number of motor neurons
   sensory_fanout=sensory_fanout,  # How many outgoing synapses has each sensory neuron
   inter_fanout=inter_fanout,  # How many outgoing synapses has each inter neuron
-  recurrent_command_synapses=34,  # Now many recurrent synapses are in the
+  recurrent_command_synapses=recurrent,  # Now many recurrent synapses are in the
   # command neuron  layer
   motor_fanin=motor_fanin,  #  How many incoming syanpses has each motor neuron
 )
@@ -268,20 +279,19 @@ for BatchSize in BatchSizes:
         for layer in layers:
             model = Sequential()
             time = datetime.now().strftime("%m-%d-%H-%M-%S")
-            NAME = f"Liquid-LSTM-Dense Layers-{dense}-Command N-{command_neurons}-inter n-{inter}Filters-{BatchSize}-Layers{layer}-Learning Rate-{learning_r}-Time-{time}"
+            NAME = f"Liquid-LSTM-SeqLen-{seq_len}- Dropout-{dropout}-Cmnd N-{command_neurons}-Intr N-{inter}-Snsry F-{sensory_fanout}-Intr F-{inter_fanout}-Motor Fanin-{motor_fanin}-Recurrent-{recurrent}-Filters-{BatchSize}-Layers{layer}-Learning R-{learning_r}-Time-{time}"
             model.add(InputLayer(input_shape=train_x.shape[1:]))
             model.add(RNN(rnn_cell, return_sequences=True))
-            # LSTM ONLY
+            # ** LSTM ONLY
             for x in range(layer-1):
                 model.add(LSTM(BatchSize, input_shape=(train_x.shape[1:]), return_sequences=True))
-                model.add(Dropout(0.1))
+                model.add(Dropout(dropout))
                 model.add(BatchNormalization())
             model.add(LSTM(BatchSize, input_shape=(train_x.shape[1:]), return_sequences=False))
-            model.add(Dropout(0.1))
+            model.add(Dropout(dropout))
             model.add(BatchNormalization())
 
-            # Bidirectional LSTM:
-
+            # ** Bidirectional LSTM:
             # model.add(Dropout(0.1))
             # model.add(BatchNormalization())
             # model.add(LSTM(BatchSize, input_shape=(train_x.shape[1:]), return_sequences=True))
@@ -293,6 +303,7 @@ for BatchSize in BatchSizes:
             # model.add(tf.keras.Input(shape=train_x.shape[1:]))
             model.add(Flatten())
             model.add(Dense(BatchSize, activation="relu"))
+
             model.add(Dense(dBatchSize, activation="linear"))
 
 
