@@ -34,7 +34,7 @@ class SupplyVapor:
         self.model = Sequential()
         self.seq_len = seq_len
 
-    def rnn_cell(self, inter, command_neurons, sensory_fanout, inter_fanout, motor_fanin, recurrent):
+    def rnn_cell_init(self, inter, command_neurons, sensory_fanout, inter_fanout, motor_fanin, recurrent):
         self.inter = inter
         self.command_neurons = command_neurons
         self.sensory_fanout = sensory_fanout
@@ -52,6 +52,15 @@ class SupplyVapor:
             motor_fanin=motor_fanin,  # How many incoming syanpses has each motor neuron
         )
         self.rnn_cell = LTCCell(wiring)
+
+    def plot_wiring(self):
+        sns.set_style("white")
+        plt.figure(figsize=(12, 12))
+        legend_handles = self.rnn_cell.draw_graph(layout='spiral', neuron_colors={"command": "tab:cyan"})
+        plt.legend(handles=legend_handles, loc="upper center", bbox_to_anchor=(1, 1))
+        sns.despine(left=True, bottom=True)
+        plt.tight_layout()
+        plt.show()
 
     def Liquid_LSTM_init(self,layers,BatchSize, dropout, learning_r):
         self.learning_r = learning_r
