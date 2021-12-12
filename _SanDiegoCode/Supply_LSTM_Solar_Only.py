@@ -114,7 +114,7 @@ print(df.shape)
 
 
 #Figuring out which parts of data to use for prediction vs results
-print("Moving on to sorting data")
+print("Moving on to sorting data!")
 # Scale the nums to be between 0-1
 def scaleData():
     scaler = MinMaxScaler()
@@ -136,27 +136,28 @@ scaleData()
 
 # ---- PLOT FOR ENERGY PRODUCTION + GHI ---------
 
-# fig, ax1 = plt.subplots(figsize=(15, 9))
-#
-#
-# color = 'tab:red'
-# ax1.set_xlabel('Hour')
-# ax1.set_xlabel('DateTime')
-# ax1.set_ylabel('Energy production KWH', color=color)
-# ax1.plot(df.iloc[9000:9100]['Supply'], color=color, alpha=0.5)
-# ax1.tick_params(axis='y', labelcolor=color)
-#
-# ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-#
-# color = 'tab:blue'
-# ax2.set_ylabel('Target(GHI)', color=color)  # we already handled the x-label with ax1
-# ax2.plot(df.iloc[9000:9100]['target'], color=color, alpha=0.5)
-#
-# ax2.tick_params(axis='y', labelcolor=color)
-#
-# fig.suptitle('Hourly Energy production and Solar Irradiance Correlation from 1/6/2021')
-# fig.tight_layout()
-# plt.show()
+def plot_energy_gen_and_GHI():
+    fig, ax1 = plt.subplots(figsize=(15, 9))
+
+
+    color = 'tab:red'
+    ax1.set_xlabel('Hour')
+    ax1.set_xlabel('DateTime')
+    ax1.set_ylabel('Energy production KWH', color=color)
+    ax1.plot(df.iloc[9000:9100]['Supply'], color=color, alpha=0.5)
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+    color = 'tab:blue'
+    ax2.set_ylabel('Target(GHI)', color=color)  # we already handled the x-label with ax1
+    ax2.plot(df.iloc[9000:9100]['target'], color=color, alpha=0.5)
+
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    fig.suptitle('Hourly Energy production and Solar Irradiance Correlation from 1/6/2021')
+    fig.tight_layout()
+    plt.show()
 
 
 #Creating main_df and validation_df
@@ -182,7 +183,7 @@ def dataframe_to_csv(df, filepath):
 # dataframe_to_csv(main_df,"main_df_scaled_v3.csv")
 # dataframe_to_csv(validation_df,"validation_df_scaled_v3.csv")
 
-def preprocess(df):
+def preprocess(df,seq_len):
 
     sequential_data = []  # this is a list that will CONTAIN the sequences
     prev_days = deque(maxlen=seq_len)  # Actual seq made with deque, keeps the maximum length by popping out older values as new ones come in
@@ -202,10 +203,10 @@ def preprocess(df):
     return np.array(X), y
 
 
-train_x, train_y = preprocess(main_df)
+train_x, train_y = preprocess(main_df,seq_len)
 
 #np.savetxt('train_x_solar.csv', train_x, delimiter=',')
-validation_x, validation_y = preprocess(validation_df)
+validation_x, validation_y = preprocess(validation_df,seq_len)
 
 print(f"train data: {len(train_x)}, validation: {len(validation_x)}")
 
@@ -229,17 +230,18 @@ validation_y[np.isnan(validation_y)] = 0
 class SaveBestModel(tf.keras.callbacks.Callback):
     def __init__(self, save_best_metric='val_root_mean_squared_error'):
         self.save_best_metric = save_best_metric
-        self.lowestError = 600
+        self.lowestError = 484
     def on_epoch_end(self, epoch, logs=None):
         #print(logs[self.save_best_metric])
         if(logs[self.save_best_metric] < self.lowestError):
             self.lowestError = logs[self.save_best_metric]
-            self.model.save(f"supply_model/{seq_len}hrinputLiquid-{round(logs[self.save_best_metric],2)}-RMSE.model")
+            # self.model.save(f"supply_model/{seq_len}hrinputLiquid-{round(logs[self.save_best_metric],2)}-RMSE.model")
+            self.model.save(f"supply_model_v2/{seq_len}hrinputLiquid-{round(logs[self.save_best_metric], 2)}-RMSE.model")
             print(f"\n------Model with RMSE of {logs[self.save_best_metric]} saved------")
 
 save_best_model = SaveBestModel()
 
-EPOCHS = 60
+EPOCHS = 100
 BatchSizes = [64,32]
 learning_rs = [0.0005]
 layers = [2]
@@ -280,16 +282,28 @@ for BatchSize in BatchSizes:
             model = Sequential()
             time = datetime.now().strftime("%m-%d-%H-%M-%S")
             NAME = f"Liquid-LSTM-SeqLen-{seq_len}- Dropout-{dropout}-Cmnd N-{command_neurons}-Intr N-{inter}-Snsry F-{sensory_fanout}-Intr F-{inter_fanout}-Motor Fanin-{motor_fanin}-Recurrent-{recurrent}-Filters-{BatchSize}-Layers{layer}-Learning R-{learning_r}-Time-{time}"
-            model.add(InputLayer(input_shape=train_x.shape[1:]))
-            model.add(RNN(rnn_cell, return_sequences=True))
-            # ** LSTM ONLY
-            for x in range(layer-1):
+            # Liquid -> LSTM
+            # model.add(InputLayer(input_shape=train_x.shape[1:]))
+            # model.add(RNN(rnn_cell, return_sequences=True))
+
+            # for x in range(layer-1):
+            #     model.add(LSTM(BatchSize, input_shape=(train_x.shape[1:]), return_sequences=True))
+            #     model.add(Dropout(dropout))
+            #     model.add(BatchNormalization())
+            # model.add(LSTM(BatchSize, input_shape=(train_x.shape[1:]), return_sequences=False))
+            # model.add(Dropout(dropout))
+            # model.add(BatchNormalization())
+
+            #LSTM -> Liquid
+            for x in range(layer - 1):
                 model.add(LSTM(BatchSize, input_shape=(train_x.shape[1:]), return_sequences=True))
                 model.add(Dropout(dropout))
                 model.add(BatchNormalization())
-            model.add(LSTM(BatchSize, input_shape=(train_x.shape[1:]), return_sequences=False))
+            model.add(LSTM(BatchSize, input_shape=(train_x.shape[1:]), return_sequences=True))
             model.add(Dropout(dropout))
             model.add(BatchNormalization())
+
+            model.add(RNN(rnn_cell, input_shape=(train_x.shape[1:]), return_sequences=False))
 
             # ** Bidirectional LSTM:
             # model.add(Dropout(0.1))
@@ -316,7 +330,7 @@ for BatchSize in BatchSizes:
             #plot_wiring()
             tensorboard = TensorBoard(log_dir=f'SupplyLogsv3/{NAME}', histogram_freq=1, write_images=True) #tensorboard --logdir=SupplyLogsv3
 
-            filepath = "eNet-{epoch:02d}-{mean_absolute_percentage_error:.3f}"
+            # filepath = "eNet-{epoch:02d}-{mean_absolute_percentage_error:.3f}"
             #checkpoint = ModelCheckpoint("models/{}.model".format(filepath, monitor=['mean_absolute_percentage_error'] , verbose=1, save_best_only=True, mode='max'))
 
 
