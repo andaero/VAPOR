@@ -1,20 +1,6 @@
-
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization, MaxPool2D, MaxPool3D, Flatten, RNN, Bidirectional, InputLayer
-from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
-from tensorflow.keras import mixed_precision
-from functools import reduce
-
-from scipy import stats
-from kerasncp import wirings
-from kerasncp.tf import LTCCell
-import seaborn as sns
-from datetime import datetime
 from SupplyVapor import SupplyVapor
-from Supply_LSTM_Solar_Only import weatherPreprocessing, scaleData
 from Supply_VAPOR_Model_Preprocess import model_preprocess
-
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -37,7 +23,7 @@ train_x, train_y, validation_x, validation_y = model_preprocess(seq_len=seq_len)
 
 #CREATING THE MODEL
 
-EPOCHS = 80
+EPOCHS = 60
 BatchSizes = [64,32]
 learning_rs = [0.0005]
 layers = [2]
@@ -59,7 +45,7 @@ for BatchSize in BatchSizes:
     for learning_r in learning_rs:
         for layer in layers:
             for i in range(len(inter)):
-                Vapor = SupplyVapor(train_x,train_y, validation_x, validation_y, seq_len)
+                Vapor = SupplyVapor(train_x,train_y, validation_x, validation_y, seq_len,EPOCHS)
                 Vapor.rnn_cell_init(inter[i], command_neurons[i], sensory_fanout[i], inter_fanout[i], motor_fanin[i], recurrent[i])
                 Vapor.LSTM_Liquid_init(layer,BatchSize,dropout,learning_r)
                 Vapor.train_model()
