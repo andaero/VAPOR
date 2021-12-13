@@ -18,34 +18,42 @@ drop_remainder = True
 
 
 
-seq_len = 24
-train_x, train_y, validation_x, validation_y = model_preprocess(seq_len=seq_len)
+seq_lens = [36,48,24]
 
 #CREATING THE MODEL
 
-EPOCHS = 60
-BatchSizes = [64,32]
+EPOCHS = 50
+BatchSizes = [64]
 learning_rs = [0.0005]
-layers = [2]
+layers = [2,3]
 dense = 2;
 dBatchSize = 1;
 dropout = 0.2;
 
-inter = [32,20]
-command_neurons = [32,20]
-sensory_fanout = [16,10]
-inter_fanout = [16,10]
-motor_fanin = [16,10]
-recurrent = [20,18]
+inter = [80,64]
+command_neurons = [64,64]
+sensory_fanout = [24,20]
+inter_fanout = [24,20]
+motor_fanin = [24,16]
+recurrent = [32,32]
 
 
 
+for seq_len in seq_lens:
+    for BatchSize in BatchSizes:
+        for learning_r in learning_rs:
+            for layer in layers:
+                for i in range(len(inter)): #range is EXCLUSIVE
+                    train_x, train_y, validation_x, validation_y = model_preprocess(seq_len=seq_len)
 
-for BatchSize in BatchSizes:
-    for learning_r in learning_rs:
-        for layer in layers:
-            for i in range(len(inter)):
-                Vapor = SupplyVapor(train_x,train_y, validation_x, validation_y, seq_len,EPOCHS)
-                Vapor.rnn_cell_init(inter[i], command_neurons[i], sensory_fanout[i], inter_fanout[i], motor_fanin[i], recurrent[i])
-                Vapor.LSTM_Liquid_init(layer,BatchSize,dropout,learning_r)
-                Vapor.train_model()
+                    # LIQUID FIRST TEST
+                    Vapor = SupplyVapor(train_x, train_y, validation_x, validation_y, seq_len, EPOCHS)
+                    Vapor.rnn_cell_init(inter[i], command_neurons[i], sensory_fanout[i], inter_fanout[i], motor_fanin[i],
+                                        recurrent[i])
+                    Vapor.Liquid_LSTM_init(layer, BatchSize, dropout, learning_r)
+
+                    # LSTM FIRST TEST
+                    # Vapor = SupplyVapor(train_x,train_y, validation_x, validation_y, seq_len,EPOCHS)
+                    # Vapor.rnn_cell_init(inter[i], command_neurons[i], sensory_fanout[i], inter_fanout[i], motor_fanin[i], recurrent[i])
+                    # Vapor.LSTM_Liquid_init(layer,BatchSize,dropout,learning_r)
+
