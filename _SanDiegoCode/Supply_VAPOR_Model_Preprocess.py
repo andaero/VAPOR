@@ -23,6 +23,20 @@ def weatherPreprocessing(filepath):
     weatherDf = importWeatherDf.set_index("DATE").resample('H').mean()
     return weatherDf
 
+def weatherPreprocessingSolcast(filepath):
+    importWeatherDf = pd.read_csv(filepath, skiprows=10, usecols=["Year","Month","Day","Hour","Minute", "Cloudopacity", "DHI", "DNI", "GHI", "Tamb"])
+
+    importWeatherDf["DATE"] = pd.to_datetime(importWeatherDf[["Year","Month","Day","Hour","Minute"]])
+
+
+    #Drop NaN values
+    importWeatherDf = importWeatherDf.dropna()
+
+    importWeatherDf = importWeatherDf.loc[(importWeatherDf["DATE"] <= "2020-2-28") & (importWeatherDf["DATE"] >= "2018-1-1")]
+
+    weatherDf = importWeatherDf.set_index("DATE")
+    return weatherDf
+
 def scaleData(df):
     scaler = MinMaxScaler()
     df["Supply"] = scaler.fit_transform(df["Supply"].values.reshape(-1,1))
@@ -38,6 +52,11 @@ def scaleData(df):
     df["Month"] = scaler.fit_transform(df["Month"].values.reshape(-1,1))
     df["Day"] = scaler.fit_transform(df["Day"].values.reshape(-1,1))
     df["Hour"] = scaler.fit_transform(df["Hour"].values.reshape(-1,1))
+
+def scaleDataV2(df,columns):
+    scaler = MinMaxScaler
+    for column in columns:
+        df[column] = scaler.fit_transform(df[column].values.reshape(-1,1))
 
 def preprocess(df,seq_len):
 
@@ -91,8 +110,6 @@ def plot_energy_gen_and_GHI(df):
 
 def model_preprocess(seq_len):
 
-
-    print("test")
     #import in supply csv + date time
 
     importSupplyDf = pd.read_csv("../Data/supplyDatav3.csv", parse_dates=["DateTime"])
@@ -116,7 +133,6 @@ def model_preprocess(seq_len):
 
 
     df = pd.merge(supplyDf, weatherDf, left_on=['DateTime'], how='outer', right_index=True)
-    print(df.columns)
     df = df.dropna()
 
 
@@ -151,7 +167,7 @@ def model_preprocess(seq_len):
 
 
     #Figuring out which parts of data to use for prediction vs results
-    print("Moving on to sorting data HAHAHA")
+    print("Moving on to sorting data...")
 
     """---Scale the nums to be between 0-1---"""
     scaleData(df)
@@ -184,7 +200,7 @@ def model_preprocess(seq_len):
     validation_y = np.asarray(validation_y)
 
     # print(train_x[:1])
-    print(train_y[:1])
+    # print(train_y[:1])
     print(train_x.shape, train_y.shape, validation_x.shape, validation_y.shape)
     #Replacing any nan values w 0
     train_x[np.isnan(train_x)] = 0
@@ -194,3 +210,32 @@ def model_preprocess(seq_len):
 
 
     return train_x,train_y,validation_x,validation_y
+
+
+def model_preprocess_CNN(seq_len):
+
+    #import in supply csv + date time
+
+    importSupplyDf = pd.read_csv("../Data/supplyDatav4.csv", parse_dates=["DateTime"])
+    print(importSupplyDf)
+    column_list = ["RealPower0", "RealPower1", "RealPower32","RealPower25"]
+
+    importSupplyDf["RealPower_Mod"] = importSupplyDf[column_list].sum(axis=1) #add all rows except datetime
+    # print(importSupplyDf)
+    supplyDf = importSupplyDf.drop(column_list, axis=1)
+    print(supplyDf.columns)
+    print(supplyDf.head(5))
+    #Preprocess weather df
+    weatherDf = weatherPreprocessingSolcast("../Data/Solar_Irradiance/Solcast_Weather.csv")
+    df = pd.merge(supplyDf, weatherDf, left_on=['DateTime'], how='outer', right_index=True)
+    df = df.dropna()
+    print(df.head(18))
+
+    #Remove outliers
+    df = df.drop(["DateTime","Year","Minute"], axis=1)
+
+    df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
+    print(df.columns)
+    normalizeList = df.columns
+
+
