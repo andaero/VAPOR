@@ -26,6 +26,7 @@ path = "Data/PVGenProcessed"
 files = glob.glob(path + "/*.csv")
 importSupplyDf = pd.read_csv("Data/Template.csv", parse_dates=["DateTime"], usecols=["DateTime", "RealPower"])
 
+x = 0
 for file in files:
     print(file)
     df = pd.read_csv(file, parse_dates=["DateTime"], usecols=["DateTime", "RealPower"])
@@ -36,7 +37,8 @@ for file in files:
 
     # importSupplyDf = importSupplyDf.merge(df,on=["DateTime"],how="left").sum(axis=1)
 
-    importSupplyDf = importSupplyDf.merge(df,on=["DateTime"],how="left",suffixes=("_1",False))
+    importSupplyDf = importSupplyDf.merge(df,on=["DateTime"],how="left",suffixes=(f"{x}",f"{x+1}"))
+    x+=1
     importSupplyDf.fillna(0, inplace=True)
     print(importSupplyDf)
     print("--------------")
@@ -51,4 +53,4 @@ supplyDf = importSupplyDf.set_index("DateTime").resample('H').sum()#remove any o
 #supplyDf = supplyDf[(np.abs(stats.zscore(supplyDf)) < 3).all(axis=1)]
 
 print(supplyDf)
-supplyDf.to_csv("Data/supplyDatav3.csv")
+supplyDf.to_csv("Data/supplyDatav4.csv")
