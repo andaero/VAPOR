@@ -8,6 +8,7 @@ import random
 import time
 from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler
 from scipy import stats
+import seaborn as sns
 
 def weatherPreprocessing(filepath):
     importWeatherDf = pd.read_csv(filepath, skiprows=2, usecols=["Year","Month","Day","Hour","Minute", "Clearsky DHI", "Clearsky DNI", "Clearsky GHI", "Temperature"])
@@ -54,7 +55,7 @@ def scaleData(df):
     df["Hour"] = scaler.fit_transform(df["Hour"].values.reshape(-1,1))
 
 def scaleDataV2(df,columns):
-    scaler = MinMaxScaler
+    scaler = MinMaxScaler()
     for column in columns:
         df[column] = scaler.fit_transform(df[column].values.reshape(-1,1))
 
@@ -107,6 +108,24 @@ def plot_energy_gen_and_GHI(df):
     fig.tight_layout()
     plt.show()
 
+def df_to3D(df):
+  df = df.drop(["DateTime"], axis=1)
+
+  npy2D = df.to_numpy()
+  print(npy2D.shape)
+  npy3D = npy2D.reshape(-1, 10, 10)
+  print(npy3D.shape)
+  ax = sns.heatmap(npy3D[15])
+
+  # plt.title("How to visualize (plot) \n a numpy array in python using seaborn ?",fontsize=12)
+
+  # plt.savefig("visualize_numpy_array_01.png", bbox_inches='tight', dpi=100)
+
+  plt.show()
+  ax = sns.heatmap(npy3D[16])
+  plt.show()
+
+  return npy3D
 
 def model_preprocess(seq_len):
 
@@ -218,24 +237,43 @@ def model_preprocess_CNN(seq_len):
 
     importSupplyDf = pd.read_csv("../Data/supplyDatav4.csv", parse_dates=["DateTime"])
     print(importSupplyDf)
-    column_list = ["RealPower0", "RealPower1", "RealPower32","RealPower25"]
+    column_list = ["RealPower0", "RealPower1", "RealPower32"]
 
     importSupplyDf["RealPower_Mod"] = importSupplyDf[column_list].sum(axis=1) #add all rows except datetime
+    importSupplyDf["RealPower_42"] = 0.35*importSupplyDf["RealPower"]
+    importSupplyDf["RealPower_43"] = 0.4*importSupplyDf["RealPower"]
+    importSupplyDf["RealPower_44"] = 0.25*importSupplyDf["RealPower"]
+    importSupplyDf["RealPower_45"] = 0.4*importSupplyDf["RealPower4"]
+    importSupplyDf["RealPower_46"] = 0.6*importSupplyDf["RealPower4"]
+    importSupplyDf["RealPower_47"] = 0.4*importSupplyDf["RealPower20"]
+    importSupplyDf["RealPower_48"] = 0.6*importSupplyDf["RealPower20"]
+
+    supplyDf = importSupplyDf.drop(["RealPower0", "RealPower1", "RealPower32", "RealPower","RealPower4","RealPower20",], axis=1)
+
+
+
     # print(importSupplyDf)
-    supplyDf = importSupplyDf.drop(column_list, axis=1)
+    # supplyDf = importSupplyDf.drop(column_list, axis=1)
     print(supplyDf.columns)
-    print(supplyDf.head(5))
+    print(supplyDf)
     #Preprocess weather df
     weatherDf = weatherPreprocessingSolcast("../Data/Solar_Irradiance/Solcast_Weather.csv")
+
+    #Make PV values 2D
+    npy3D = df_to3D(supplyDf)
+
     df = pd.merge(supplyDf, weatherDf, left_on=['DateTime'], how='outer', right_index=True)
     df = df.dropna()
     print(df.head(18))
 
     #Remove outliers
-    df = df.drop(["DateTime","Year","Minute"], axis=1)
+    df = df.drop(["DateTime","Year","Minute",], axis=1)
 
     df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
     print(df.columns)
-    normalizeList = df.columns
+    #--Normalize data--
+    # normalizeList = list(df.columns)
+    # scaleDataV2(df,normalizeList)
+    # print(df.head(18))
 
 
