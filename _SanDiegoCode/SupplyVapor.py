@@ -19,13 +19,13 @@ from kerasncp import wirings
 from kerasncp.tf import LTCCell
 import seaborn as sns
 from datetime import datetime
-from Supply_LSTM_Solar_Only import SaveBestModel
+from SaveBestModel import SaveBestModel
 
 
 class SupplyVapor:
     """Class implementation of VAPOR supply model"""
 
-    def __init__(self, train_x, train_y, validation_x, validation_y, seq_len):
+    def __init__(self, train_x, train_y, validation_x, validation_y, seq_len, EPOCHS):
         self.train_x = train_x
         self.train_y = train_y
         self.validation_x = validation_x
@@ -33,18 +33,21 @@ class SupplyVapor:
 
         self.model = Sequential()
         self.seq_len = seq_len
+        self.EPOCHS = EPOCHS
 
-    def rnn_cell_init(self, inter, command_neurons, sensory_fanout, inter_fanout, motor_fanin, recurrent):
+    def rnn_cell_init(self, inter, command_neurons, sensory_fanout, inter_fanout, motor_fanin, recurrent, motor):
         self.inter = inter
         self.command_neurons = command_neurons
         self.sensory_fanout = sensory_fanout
         self.inter_fanout = inter_fanout
         self.motor_fanin = motor_fanin
         self.recurrent = recurrent
+        self.motor = motor
+        # Sensory -> Inter -> Command -> Motor
         wiring = wirings.NCP(
             inter_neurons=inter,  # Number of inter neurons
             command_neurons=command_neurons,  # Number of command neurons
-            motor_neurons=1,  # Number of motor neurons
+            motor_neurons=motor,  # Number of motor neurons
             sensory_fanout=sensory_fanout,  # How many outgoing synapses has each sensory neuron
             inter_fanout=inter_fanout,  # How many outgoing synapses has each inter neuron
             recurrent_command_synapses=recurrent,  # Now many recurrent synapses are in the
@@ -62,8 +65,11 @@ class SupplyVapor:
         plt.tight_layout()
         plt.show()
 
+    """Add if supply = true so that we can also implement OOP version of demand forecasting"""
     def Liquid_LSTM_init(self,layers,BatchSize, dropout, learning_r):
+
         self.learning_r = learning_r
+        self.BatchSize = BatchSize
 
         time = datetime.now().strftime("%m-%d-%H-%M-%S")
         self.NAME = f"Liquid-LSTM-SeqLen-{self.seq_len}- Dropout-{dropout}-Cmnd N-{self.command_neurons}-Intr N-{self.inter}-Snsry F-{self.sensory_fanout}-Intr F-{self.inter_fanout}-Motor Fanin-{self.motor_fanin}-Recurrent-{self.recurrent}-Filters-{BatchSize}-Layers{layers}-Learning R-{self.learning_r}-Time-{time}"
@@ -90,13 +96,14 @@ class SupplyVapor:
         self.model.add(Dense(1, activation="linear"))
 
         """Model Training"""
-        self.train_model()
+        self.__train_model()
 
     def LSTM_Liquid_init(self,layers,BatchSize,dropout,learning_r):
         self.learning_r = learning_r
+        self.BatchSize = BatchSize
 
         time = datetime.now().strftime("%m-%d-%H-%M-%S")
-        self.NAME = f"Liquid-LSTM-SeqLen-{self.seq_len}- Dropout-{dropout}-Cmnd N-{self.command_neurons}-Intr N-{self.inter}-Snsry F-{self.sensory_fanout}-Intr F-{self.inter_fanout}-Motor Fanin-{self.motor_fanin}-Recurrent-{self.recurrent}-Filters-{BatchSize}-Layers{layers}-Learning R-{self.learning_r}-Time-{time}"
+        self.NAME = f"LSTM-Liquid-SeqLen-{self.seq_len}- Dropout-{dropout}-Cmnd N-{self.command_neurons}-Intr N-{self.inter}-Snsry F-{self.sensory_fanout}-Intr F-{self.inter_fanout}-Motor Fanin-{self.motor_fanin}-Recurrent-{self.recurrent}-Motor N-{self.motor}-Filters-{BatchSize}-Layers{layers}-Learning R-{self.learning_r}-Time-{time}"
 
         """LSTM"""
         for x in range(layers-1):
@@ -120,9 +127,9 @@ class SupplyVapor:
 
 
         """Model Training"""
-        self.train_model()
+        self.__train_model()
 
-    def train_model(self):
+    def __train_model(self):
         opt = tf.keras.optimizers.Adam(learning_rate=self.learning_r, decay=1e-6)
         self.model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer=opt,
                       metrics=[tf.keras.metrics.RootMeanSquaredError()])  # tf.keras.metrics.RootMeanSquaredError()
@@ -130,7 +137,7 @@ class SupplyVapor:
         self.model.summary()
 
         # plot_wiring()
-        tensorboard = TensorBoard(log_dir=f'SupplyLogsv3/{self.NAME}', histogram_freq=1,
+        tensorboard = TensorBoard(log_dir=f'SupplyLogsv4/{self.NAME}', histogram_freq=1,
                                   write_images=True)  # tensorboard --logdir=SupplyLogsv3
 
         # filepath = "eNet-{epoch:02d}-{mean_absolute_percentage_error:.3f}"
