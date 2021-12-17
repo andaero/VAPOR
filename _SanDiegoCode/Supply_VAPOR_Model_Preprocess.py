@@ -1,5 +1,7 @@
 from collections import deque
 import glob
+
+import numpy
 import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,6 +9,7 @@ import numpy as np
 import random
 import time
 from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler
+from sklearn.utils import shuffle
 from scipy import stats
 import seaborn as sns
 
@@ -78,6 +81,43 @@ def preprocess(df,seq_len):
 
     return np.array(X), y
 
+def preprocess_aux_data(df,seq_len):
+    """ SEQ LEN HERE IS 3"""
+
+    """ NEED 4 HOURS FOR EACH SEQ LEN"""
+    columnNum = len(df.columns) - 1 # SUBTRACT 1 FOR TARGET VALUE
+    print(columnNum)
+    rowValue = int(seq_len/4) #For seq len of 12 would be 3
+    prev_days = deque(maxlen=(seq_len))  # Actual seq made with deque, keeps the maximum length by popping out older values as new ones come in
+    print(seq_len*columnNum)
+    sequential_data = np.empty([(len(df.index)-seq_len+1),rowValue, columnNum*4])  # this is a list that will CONTAIN the sequences np.empty([])
+    target_data = []
+    """ WORKS NOW"""
+
+    n = 0
+    for i in df.to_numpy():  # iterate over the values
+        prev_days.append([n for n in i[:-1]])  # store all but the target
+        if len(prev_days) == seq_len:  # make sure we have 60 numbers
+            MatrixGroup = np.array(prev_days).reshape(rowValue, columnNum*4)
+            """ columnNum*4 = [temp, opac, DHI, DNI, GHI]*4 for each column vector row
+                rowValue = length of matrix to match up with the # of PV gen matrices
+            """
+            sequential_data[n] = MatrixGroup # add all values as a 2d array
+            # sequential_data.append(MatrixGroup)
+            target_data.append(i[-1])
+            n+=1
+    print(sequential_data.shape)
+    target_np = np.array(target_data)
+    print(target_np.shape)
+    # print(sequential_data[2])
+
+
+    shuffle(sequential_data,target_np)
+
+
+    return sequential_data, target_np
+
+
 def split_main_validation_df(df):
     times = df.index.values
     last_10 = df.index.values[-int(0.1*len(times))]
@@ -108,24 +148,25 @@ def plot_energy_gen_and_GHI(df):
     fig.tight_layout()
     plt.show()
 
-def df_to3D(df):
-  df = df.drop(["DateTime"], axis=1)
+def df_to3D(df, show_fig):
+    """Converts 4 hours worth of 5x5 PV gen values into 1 10x10 PV gen matrix"""
+    df = df.drop(["DateTime"], axis=1)
 
-  npy2D = df.to_numpy()
-  print(npy2D.shape)
-  npy3D = npy2D.reshape(-1, 10, 10)
-  print(npy3D.shape)
-  ax = sns.heatmap(npy3D[15])
+    npy2D = df.to_numpy()
+    print(npy2D.shape)
+    npy3D = npy2D.reshape(-1, 10, 10)
+    print(npy3D.shape)
 
-  # plt.title("How to visualize (plot) \n a numpy array in python using seaborn ?",fontsize=12)
 
-  # plt.savefig("visualize_numpy_array_01.png", bbox_inches='tight', dpi=100)
+    ax = sns.heatmap(npy3D[2])
+    # plt.title("How to visualize (plot) \n a numpy array in python using seaborn ?",fontsize=12)
 
-  plt.show()
-  ax = sns.heatmap(npy3D[16])
-  plt.show()
+    # plt.savefig("visualize_numpy_array_01.png", bbox_inches='tight', dpi=100)
+    if(show_fig):
+        plt.show()
 
-  return npy3D
+    return npy3D
+
 
 def model_preprocess(seq_len):
 
@@ -236,10 +277,8 @@ def model_preprocess_CNN(seq_len):
     #import in supply csv + date time
 
     importSupplyDf = pd.read_csv("../Data/supplyDatav4.csv", parse_dates=["DateTime"])
-    print(importSupplyDf)
-    column_list = ["RealPower0", "RealPower1", "RealPower32"]
+    # print(importSupplyDf)
 
-    importSupplyDf["RealPower_Mod"] = importSupplyDf[column_list].sum(axis=1) #add all rows except datetime
     importSupplyDf["RealPower_42"] = 0.35*importSupplyDf["RealPower"]
     importSupplyDf["RealPower_43"] = 0.4*importSupplyDf["RealPower"]
     importSupplyDf["RealPower_44"] = 0.25*importSupplyDf["RealPower"]
@@ -248,32 +287,69 @@ def model_preprocess_CNN(seq_len):
     importSupplyDf["RealPower_47"] = 0.4*importSupplyDf["RealPower20"]
     importSupplyDf["RealPower_48"] = 0.6*importSupplyDf["RealPower20"]
 
-    supplyDf = importSupplyDf.drop(["RealPower0", "RealPower1", "RealPower32", "RealPower","RealPower4","RealPower20",], axis=1)
+    supplyDf = importSupplyDf.drop(["RealPower0", "RealPower32", "RealPower","RealPower4","RealPower20"], axis=1)
 
 
-
+    # print(supplyDf)
     # print(importSupplyDf)
     # supplyDf = importSupplyDf.drop(column_list, axis=1)
+
     print(supplyDf.columns)
     print(supplyDf)
+
+    column_list = list(importSupplyDf)
+    column_list.remove("DateTime")
+    importSupplyDf["SupplyTotal"] = importSupplyDf[column_list].sum(axis=1)  # add all rows except datetime
+    # print(importSupplyDf)
+    supplyTotalDf = importSupplyDf[["DateTime", "SupplyTotal"]].copy()
+
+
     #Preprocess weather df
     weatherDf = weatherPreprocessingSolcast("../Data/Solar_Irradiance/Solcast_Weather.csv")
 
     #Make PV values 2D
-    npy3D = df_to3D(supplyDf)
+    npy3D = df_to3D(supplyDf, show_fig=False)
+    supplyDfColumns = list(supplyDf.columns)
+    supplyDfColumns.remove("DateTime")
 
-    df = pd.merge(supplyDf, weatherDf, left_on=['DateTime'], how='outer', right_index=True)
+    #Double check to sync PV gen data with weather data
+    df = pd.merge(supplyTotalDf, weatherDf, left_on=['DateTime'], how='outer', right_index=True)
     df = df.dropna()
-    print(df.head(18))
+    # Create a target column for supply in future
+    future = 24  # predicting 24 hours in the future
+
+    df["target"] = df["SupplyTotal"].shift(-future)
+    df = df.dropna()
+
+    # auxDf = df.drop(supplyDfColumns, axis=1)
+
+    #Leave only PV gen aux inputs - Added Delete Supply + Target
+    auxDf = df.drop(["SupplyTotal", "DateTime","Year","Month","Day","Hour","Minute"], axis=1)
 
     #Remove outliers
-    df = df.drop(["DateTime","Year","Minute",], axis=1)
+    auxDf = auxDf[(np.abs(stats.zscore(auxDf)) < 3).all(axis=1)]
+    print(auxDf.columns)
+    print(auxDf)
+    # Want preprocessing to do the sequencing for just aux outputs + target
 
-    df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
-    print(df.columns)
+    """SPLIT MAIN + VALIDATION DATA FOR AUX"""
+    main_df_aux, validation_df_aux = split_main_validation_df(auxDf)
+
+    train_x_aux, train_y_aux = preprocess_aux_data(main_df_aux, 12)
+    validation_x_aux, validation_y_aux = preprocess_aux_data(validation_df_aux, 12)
+
+
+    #Change from just using 1 hr per vector to 4 hours
+
+    print(train_x_aux.shape, train_y_aux.shape, validation_x_aux.shape, validation_y_aux.shape)
+
+
+    # auxDf.to_numpy
     #--Normalize data--
     # normalizeList = list(df.columns)
     # scaleDataV2(df,normalizeList)
     # print(df.head(18))
+
+    return npy3D, train_x_aux, train_y_aux, validation_x_aux, validation_y_aux
 
 
