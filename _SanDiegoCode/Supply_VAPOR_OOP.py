@@ -18,24 +18,25 @@ drop_remainder = True
 
 
 
-seq_lens = [36,48,24]
+seq_lens = [12,6]
 
 #CREATING THE MODEL
 
 EPOCHS = 50
 BatchSizes = [64]
-learning_rs = [0.0005]
-layers = [2,3]
+learning_rs = [0.0005] #0.0005
+layers = [3]
 dense = 2;
 dBatchSize = 1;
-dropout = 0.2;
+dropout = 0.1;
 
-inter = [80,64]
+inter = [64,64]
 command_neurons = [64,64]
-sensory_fanout = [24,20]
+sensory_fanout = [32,20]
 inter_fanout = [24,20]
-motor_fanin = [24,16]
-recurrent = [32,32]
+motor_fanin = [16,16]
+recurrent = [24,16]
+motor = [2,6]
 
 
 
@@ -49,7 +50,7 @@ for seq_len in seq_lens:
                     # LIQUID FIRST TEST
                     Vapor = SupplyVapor(train_x, train_y, validation_x, validation_y, seq_len, EPOCHS)
                     Vapor.rnn_cell_init(inter[i], command_neurons[i], sensory_fanout[i], inter_fanout[i], motor_fanin[i],
-                                        recurrent[i])
+                                        recurrent[i], motor[i])
                     Vapor.Liquid_LSTM_init(layer, BatchSize, dropout, learning_r)
 
                     # LSTM FIRST TEST

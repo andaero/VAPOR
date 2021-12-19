@@ -1,8 +1,11 @@
 import tensorflow as tf
+from kerasncp import wirings
+from kerasncp.tf import LTCCell
+
 class SaveBestModel(tf.keras.callbacks.Callback):
     def __init__(self, save_best_metric='val_root_mean_squared_error'):
         self.save_best_metric = save_best_metric
-        self.lowestError = 484
+        self.lowestError = 470
 
     def on_epoch_end(self, epoch, logs=None):
         # print(logs[self.save_best_metric])
