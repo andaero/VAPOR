@@ -96,7 +96,7 @@ class SupplyVapor:
         self.model.add(Dense(1, activation="linear"))
 
         """Model Training"""
-        self.__train_model()
+        self._train_model()
 
     def LSTM_Liquid_init(self,layers,BatchSize,dropout,learning_r):
         self.learning_r = learning_r
@@ -127,9 +127,9 @@ class SupplyVapor:
 
 
         """Model Training"""
-        self.__train_model()
+        self._train_model()
 
-    def __train_model(self):
+    def _train_model(self):
         opt = tf.keras.optimizers.Adam(learning_rate=self.learning_r, decay=1e-6)
         self.model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer=opt,
                       metrics=[tf.keras.metrics.RootMeanSquaredError()])  # tf.keras.metrics.RootMeanSquaredError()
