@@ -48,7 +48,7 @@ def loadModel():
     return model
 model = loadModel()
 prediction = model.predict(model_input)
-st.subheader(f"The supply forecast for {date} is")
+st.subheader(f"The supply forecast from VAPOR for {date} is")
 st.header(f"{prediction[0][0]} KWH")
 realVal = index_df.iloc[0]["target"]
 st.subheader(f"The real value is")

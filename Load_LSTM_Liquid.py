@@ -248,17 +248,17 @@ for BatchSize in BatchSizes:
             # model.add(BatchNormalization())
 
             #LIQUID --> LSTM
-            # model.add(InputLayer(input_shape=train_x.shape[1:]))
-            # model.add(RNN(rnn_cell, return_sequences=True))
-            # model.add(Dropout(0.1))
-            # model.add(BatchNormalization())
-            # for x in range(layer-1):
-            #     model.add(LSTM(BatchSize, return_sequences=True))
-            #     model.add(Dropout(0.1))
-            #     model.add(BatchNormalization())
-            # model.add(LSTM(BatchSize, return_sequences=False))
-            # model.add(Dropout(0.1))
-            # model.add(BatchNormalization())
+            model.add(InputLayer(input_shape=train_x.shape[1:]))
+            model.add(RNN(rnn_cell, return_sequences=True))
+            model.add(Dropout(0.1))
+            model.add(BatchNormalization())
+            for x in range(layer-1):
+                model.add(LSTM(BatchSize, return_sequences=True))
+                model.add(Dropout(0.1))
+                model.add(BatchNormalization())
+            model.add(LSTM(BatchSize, return_sequences=False))
+            model.add(Dropout(0.1))
+            model.add(BatchNormalization())
 
             #PURE BASIC ANN - 3.7% MAPE
             model.add(tf.keras.Input(shape=train_x.shape[1:]))

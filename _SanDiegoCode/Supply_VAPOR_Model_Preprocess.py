@@ -81,12 +81,13 @@ def preprocess(df,seq_len):
 
     return np.array(X), y
 
-def preprocess_aux_data(df,seq_len):
-    """ SEQ LEN HERE IS 3"""
+def preprocess_aux_data(df,seq_len,supplyTotal):
+    """Converts aux data from df into groups of 3 vectors"""
 
     """ NEED 4 HOURS FOR EACH SEQ LEN"""
+    if(supplyTotal==False):
+        df = df.drop(["SupplyTotal"], axis=1)
     columnNum = len(df.columns) - 1 # SUBTRACT 1 FOR TARGET VALUE
-    # print(columnNum)
     rowValue = int(seq_len/4) #For seq len of 12 would be 3
     prev_days = deque(maxlen=(seq_len))  # Actual seq made with deque, keeps the maximum length by popping out older values as new ones come in
     # print(seq_len*columnNum)
@@ -117,6 +118,37 @@ def preprocess_aux_data(df,seq_len):
     return sequential_data, target_np
 
 
+def df_to3D(df, seq_len, show_fig):
+    """Converts df to 5x5 PV gen values, then into groups of 3 10x10 PV gen matrices"""
+    # df = df.drop(["DateTime"], axis=1)
+    seq_len_divided_4 = int(seq_len/4)
+    npy2D = df.to_numpy()
+    print(npy2D.shape)
+    npy3D = npy2D.reshape(-1, 5, 5)
+    length = int(npy3D.shape[0])
+    #MAKE THSE INTO
+    sequential_data = np.empty([length-seq_len+1,seq_len_divided_4,10,10])  # numpy array contains the sequences without accounting for the dimensionality
+    for t in range(int(length-seq_len+1)):
+        x = 0
+        series = np.empty([3, 10, 10])
+        for i in range(0,seq_len_divided_4,4):
+            series[x]= np_FiveToTen(t+i, npy3D)
+            x+=1
+        sequential_data[t] = series
+    # npy3D = npy2D.reshape(-1, 10, 10)
+    # print(npy3D.shape)
+    print(sequential_data.shape)
+
+    # ax = sns.heatmap(npy3D[2])
+    # plt.title("How to visualize (plot) \n a numpy array in python using seaborn ?",fontsize=12)
+    # plt.savefig("visualize_numpy_array_01.png", bbox_inches='tight', dpi=100)
+    if(show_fig):
+        plt.show()
+
+
+    shuffle(sequential_data,random_state=100)
+
+    return sequential_data
 
 def split_main_validation_df(df):
     times = df.index.values
@@ -154,35 +186,6 @@ def np_FiveToTen(t, npy3D):
     npTenByTen = np.concatenate([npy2DUpper, npy2DLower], axis=0)
     return npTenByTen
 
-def df_to3D(df, seq_len, show_fig):
-    """Converts 4 hours worth of 5x5 PV gen values into 1 10x10 PV gen matrix"""
-    # df = df.drop(["DateTime"], axis=1)
-    seq_len = int(seq_len/4)
-    npy2D = df.to_numpy()
-    print(npy2D.shape)
-    npy3D = npy2D.reshape(-1, 5, 5)
-    length = int(npy3D.shape[0])
-    #MAKE THSE INTO
-    sequential_data = np.empty([length-2,seq_len,10,10])  # numpy array contains the sequences without accounting for the dimensionality
-    for t in range(int(length-3)):
-        x = 0
-        series = np.empty([3, 10, 10])
-        for i in range(0,seq_len,4):
-            series[x]= np_FiveToTen(t+i, npy3D)
-            x+=1
-        sequential_data[t] = series
-    # npy3D = npy2D.reshape(-1, 10, 10)
-    # print(npy3D.shape)
-    print(sequential_data.shape)
-
-    # ax = sns.heatmap(npy3D[2])
-    # plt.title("How to visualize (plot) \n a numpy array in python using seaborn ?",fontsize=12)
-    # plt.savefig("visualize_numpy_array_01.png", bbox_inches='tight', dpi=100)
-    if(show_fig):
-        plt.show()
-    shuffle(sequential_data,random_state=100)
-
-    return sequential_data
 
 
 def model_preprocess(seq_len):
@@ -289,8 +292,8 @@ def model_preprocess(seq_len):
     return train_x,train_y,validation_x,validation_y
 
 
-def model_preprocess_CNN(seq_len):
-
+def model_preprocess_CNN(seq_len, supplyTotal):
+    "Preprocesses data into groups of 3 10x10 PV matrices and aux data vectors, supplyTotal=True if include in auxDf"
     #import in supply csv + date time
 
     importSupplyDf = pd.read_csv("../Data/supplyDatav4.csv", parse_dates=["DateTime"])
@@ -361,27 +364,29 @@ def model_preprocess_CNN(seq_len):
 
     #AUX DF STUFF
     auxDf = df.drop(supplyDfColumns, axis=1)
-    print(auxDf.columns)
 
 
     #Remove outliers
-    print(auxDf)
+
     # Want preprocessing to do the sequencing for just aux outputs + target
 
-    """SPLIT MAIN + VALIDATION DATA FOR AUX"""
+    """PV DATA SPLIT + PREPROCESSING"""
     main_df_pv, validation_df_pv = split_main_validation_df(pvDf)
 
     train_x_pv = df_to3D(main_df_pv, seq_len, show_fig=False)
     validation_x_pv = df_to3D(validation_df_pv, seq_len, show_fig=False)
 
     print("Train X Shape PV: ", train_x_pv.shape)
+
     print("Validation X Shape PV:  ", validation_x_pv.shape)
 
-
+    """AUX DATA SPLIT + PREPROCESSING"""
     main_df_aux, validation_df_aux = split_main_validation_df(auxDf)
-
-    train_x_aux, train_y = preprocess_aux_data(main_df_aux, seq_len)
-    validation_x_aux, validation_y = preprocess_aux_data(validation_df_aux, seq_len)
+    print("AUX DF ", len(main_df_aux.index))
+    print("PV DF: ", len(main_df_pv.index))
+    print(auxDf.columns)
+    train_x_aux, train_y = preprocess_aux_data(main_df_aux, seq_len, supplyTotal=supplyTotal)
+    validation_x_aux, validation_y = preprocess_aux_data(validation_df_aux, seq_len, supplyTotal=supplyTotal)
 
 
     #Change from just using 1 hr per vector to 4 hours
