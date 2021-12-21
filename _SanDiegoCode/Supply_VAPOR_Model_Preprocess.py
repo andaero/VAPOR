@@ -113,7 +113,7 @@ def preprocess_aux_data(df,seq_len,supplyTotal):
     # print(sequential_data[2])
 
 
-    shuffle(sequential_data,target_np,random_state=100)
+    sequential_data, target_np = shuffle(sequential_data,target_np,random_state=100)
 
     return sequential_data, target_np
 
@@ -139,14 +139,16 @@ def df_to3D(df, seq_len, show_fig):
     # print(npy3D.shape)
     print(sequential_data.shape)
 
-    # ax = sns.heatmap(npy3D[2])
-    # plt.title("How to visualize (plot) \n a numpy array in python using seaborn ?",fontsize=12)
-    # plt.savefig("visualize_numpy_array_01.png", bbox_inches='tight', dpi=100)
-    if(show_fig):
-        plt.show()
+    sequential_data = shuffle(sequential_data,random_state=42)
+
+    for map2D in sequential_data[23]:
+        ax = sns.heatmap(map2D)
+        plt.title("How to visualize (plot) \n a numpy array in python using seaborn",fontsize=12)
+        plt.savefig("visualize_numpy_array_01.png", bbox_inches='tight', dpi=100)
+        if(show_fig):
+            plt.show()
 
 
-    shuffle(sequential_data,random_state=100)
 
     return sequential_data
 
@@ -373,8 +375,8 @@ def model_preprocess_CNN(seq_len, supplyTotal):
     """PV DATA SPLIT + PREPROCESSING"""
     main_df_pv, validation_df_pv = split_main_validation_df(pvDf)
 
-    train_x_pv = df_to3D(main_df_pv, seq_len, show_fig=False)
-    validation_x_pv = df_to3D(validation_df_pv, seq_len, show_fig=False)
+    train_x_pv = df_to3D(main_df_pv, seq_len, show_fig=True)
+    validation_x_pv = df_to3D(validation_df_pv, seq_len, show_fig=True)
 
     print("Train X Shape PV: ", train_x_pv.shape)
 
