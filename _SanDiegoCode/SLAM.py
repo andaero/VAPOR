@@ -1,19 +1,23 @@
 import tensorflow as tf
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, LSTM, BatchNormalization, MaxPool2D, MaxPool3D, Flatten, RNN, Bidirectional, InputLayer
+from tensorflow.keras.layers import Dense, multiply
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
-from tensorflow.keras import mixed_precision
-from functools import reduce
 
-from scipy import stats
-from kerasncp import wirings
-from kerasncp.tf import LTCCell
-import seaborn as sns
-from datetime import datetime
-from SaveBestModel import SaveBestModel
 
-class SLAM:
+class SLAM (tf.keras.layers.Layer):
     """Class implementation of Sigmoid Liquid Attention Matrix"""
-    def __init__(self, inputVector, ):
+    def __init__(self, relu):
+        super(SLAM, self).__init__()
+        if(relu == False):
+            self.dense = Dense(10, activation="linear")
+        else:
+            self.dense = Dense(10, activation="relu")
+    def call(self, inputs):
+        x = self.dense(inputs)
+
+        TenByTen = multiply([x , tf.transpose(x)])
+        SigmoidTenByTen = tf.math.sigmoid(TenByTen)
+        return SigmoidTenByTen
+
 
