@@ -144,7 +144,7 @@ def df_to3D(df, seq_len, show_fig):
     for map2D in sequential_data[23]:
         ax = sns.heatmap(map2D)
         plt.title("How to visualize (plot) \n a numpy array in python using seaborn",fontsize=12)
-        plt.savefig("visualize_numpy_array_01.png", bbox_inches='tight', dpi=100)
+        plt.savefig("visualize_numpy_array.png", bbox_inches='tight', dpi=100)
         if(show_fig):
             plt.show()
 
@@ -294,7 +294,7 @@ def model_preprocess(seq_len):
     return train_x,train_y,validation_x,validation_y
 
 
-def model_preprocess_CNN(seq_len, supplyTotal):
+def model_preprocess_CNN(seq_len, supplyTotal, showFig):
     "Preprocesses data into groups of 3 10x10 PV matrices and aux data vectors, supplyTotal=True if include in auxDf"
     #import in supply csv + date time
 
@@ -317,7 +317,7 @@ def model_preprocess_CNN(seq_len, supplyTotal):
     # supplyDf = importSupplyDf.drop(column_list, axis=1)
 
     print(supplyDf.columns)
-    print(supplyDf)
+    # print(supplyDf)
 
     column_list = list(importSupplyDf)
     column_list.remove("DateTime")
@@ -350,7 +350,7 @@ def model_preprocess_CNN(seq_len, supplyTotal):
     df = df.drop(["DateTime","Year","Month","Day","Hour","Minute"],axis=1)
 
     print(df.columns)
-    print(df)
+    # print(df)
 
     df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
 
@@ -358,7 +358,7 @@ def model_preprocess_CNN(seq_len, supplyTotal):
 
     #PV GEN STUFF
     pvDf = df.drop(["SupplyTotal", "target"], axis=1)
-    print(supplyDfColumns)
+    # print(supplyDfColumns)
     pvDf = pvDf.drop(["Cloudopacity", "DHI", "DNI", "GHI", "Tamb"], axis=1)
     print("COLUMNS FOR PV:", pvDf.columns)
 
@@ -375,8 +375,8 @@ def model_preprocess_CNN(seq_len, supplyTotal):
     """PV DATA SPLIT + PREPROCESSING"""
     main_df_pv, validation_df_pv = split_main_validation_df(pvDf)
 
-    train_x_pv = df_to3D(main_df_pv, seq_len, show_fig=True)
-    validation_x_pv = df_to3D(validation_df_pv, seq_len, show_fig=True)
+    train_x_pv = df_to3D(main_df_pv, seq_len, show_fig=showFig)
+    validation_x_pv = df_to3D(validation_df_pv, seq_len, show_fig=showFig)
 
     print("Train X Shape PV: ", train_x_pv.shape)
 
