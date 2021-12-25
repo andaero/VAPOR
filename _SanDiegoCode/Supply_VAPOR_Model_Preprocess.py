@@ -140,12 +140,11 @@ def df_to3D(df, seq_len, show_fig):
     print(sequential_data.shape)
 
     sequential_data = shuffle(sequential_data,random_state=42)
-
-    for map2D in sequential_data[23]:
-        ax = sns.heatmap(map2D)
-        plt.title("How to visualize (plot) \n a numpy array in python using seaborn",fontsize=12)
-        plt.savefig("visualize_numpy_array.png", bbox_inches='tight', dpi=100)
-        if(show_fig):
+    if (show_fig):
+        for map2D in sequential_data[23]:
+            ax = sns.heatmap(map2D)
+            plt.title("How to visualize (plot) \n a numpy array in python using seaborn",fontsize=12)
+            plt.savefig("visualize_numpy_array.png", bbox_inches='tight', dpi=100)
             plt.show()
 
 
