@@ -9,11 +9,17 @@ class VAPOR_Model(tf.keras.Model):
         # self.main = MainModel()
 
     def call(self, inputs):
+        # watch out for batch norm - weird w training=True
         x_main, x_aux = inputs
-        x_aux_np = np.array(x_aux)
-        for aux in x_aux_np:
-            print(aux)
-            x = self.aux(aux)
+        aux_slices = tf.unstack(x_aux, axis=1) #axis=1 because 0th dimension is unknown
+        # c = lambda i : i<len(aux_slices)
+        # x = tf.while_loop(c, self.aux(), aux_slices)
+        i = 0
+        ta = tf.TensorArray(dtype=tf.float32, size=0, dynamic_size=True)
+        for aux_slice in aux_slices:
+            ta = ta.write(i, self.aux(aux_slice))
+            i+=1
 
+        ta_stacked= ta.stack()
         #return a 3x10x10 array
-        return x
+        return ta_stacked
