@@ -16,10 +16,8 @@ class SLAM (tf.keras.layers.Layer):
 
     def call(self, inputs):
         x = self.dense(inputs)
-        print(x.shape)
-        TenByTen = tf.linalg.matmul(x,x, transpose_b=True) #outer product of x
+        TenByTen = tf.linalg.matmul(x,x, transpose_a=True) #outer product of x
         SigmoidTenByTen = tf.math.sigmoid(TenByTen)
-        print(SigmoidTenByTen)
         return SigmoidTenByTen
 
 
