@@ -19,7 +19,9 @@ class VAPOR_Model(tf.keras.Model):
         for aux_slice in aux_slices:
             ta = ta.write(i, self.aux(aux_slice))
             i+=1
+            print(i)
 
-        ta_stacked= ta.stack()
+        ta_stacked= ta.stack() # Don't need to stack can just directly multiply by the 10x10 matrices
+        print(ta_stacked)
         #return a 3x10x10 array
         return ta_stacked

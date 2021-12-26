@@ -10,5 +10,5 @@ opt = tf.keras.optimizers.Adam(learning_rate=0.001, decay=1e-6)
 
 model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer=opt,
                       metrics=[tf.keras.metrics.RootMeanSquaredError()])
-model.fit([train_x_pv, train_x_aux], train_y, batch_size=64, epochs=20)
+model.fit([train_x_pv, train_x_aux], train_y, batch_size=1, epochs=20, validation_data=([validation_x_pv,validation_x_aux],validation_y))
 #validation_data=([validation_x_pv, validation_x_aux], validation_y))
