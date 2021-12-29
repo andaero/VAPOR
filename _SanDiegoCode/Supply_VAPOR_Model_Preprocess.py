@@ -131,7 +131,7 @@ def df_to3D(df, seq_len, show_fig):
     sequential_data = np.empty([length-seq_len+1,seq_len_divided_4,10,10])  # numpy array contains the sequences without accounting for the dimensionality
     for t in range(int(length-seq_len+1)):
         x = 0
-        series = np.empty([3, 10, 10])
+        series = np.empty([seq_len_divided_4, 10, 10])
         for i in range(0,seq_len,4):
             series[x]= np_FiveToTen(t+i, npy3D)
             x+=1
@@ -393,8 +393,7 @@ def model_preprocess_CNN(seq_len, supplyTotal, showFig, normalize):
 
     """AUX DATA SPLIT + PREPROCESSING"""
     main_df_aux, validation_df_aux = split_main_validation_df(auxDf)
-    print("AUX DF ", len(main_df_aux.index))
-    print("PV DF: ", len(main_df_pv.index))
+
     print(auxDf.columns)
     train_x_aux, train_y = preprocess_aux_data(main_df_aux, seq_len, supplyTotal=supplyTotal)
     validation_x_aux, validation_y = preprocess_aux_data(validation_df_aux, seq_len, supplyTotal=supplyTotal)
