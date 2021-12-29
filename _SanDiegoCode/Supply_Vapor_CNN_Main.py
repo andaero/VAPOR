@@ -3,12 +3,13 @@ from Supply_VAPOR_Model_Preprocess import model_preprocess_CNN, model_preprocess
 from VAPORModel import VAPOR_Model
 
 
-train_x_pv, validation_x_pv, train_x_aux, validation_x_aux, train_y, validation_y = model_preprocess_CNN(12,supplyTotal=False, showFig=False)
+train_x_pv, validation_x_pv, train_x_aux, validation_x_aux, train_y, validation_y = model_preprocess_CNN(12,supplyTotal=False, showFig=False, normalize=False)
+# print(train_x_pv)
 
 model = VAPOR_Model()
-opt = tf.keras.optimizers.Adam(learning_rate=0.001, decay=1e-6)
+opt = tf.keras.optimizers.Adam(learning_rate=0.0005, decay=1e-6)
 
 model.compile(loss=tf.keras.losses.MeanSquaredError(), optimizer=opt,
                       metrics=[tf.keras.metrics.RootMeanSquaredError()])
-model.fit([train_x_pv, train_x_aux], train_y, batch_size=1, epochs=20, validation_data=([validation_x_pv,validation_x_aux],validation_y))
+model.fit([train_x_pv, train_x_aux], train_y, batch_size=1, epochs=100, validation_data=([validation_x_pv,validation_x_aux],validation_y))
 #validation_data=([validation_x_pv, validation_x_aux], validation_y))
