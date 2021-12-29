@@ -61,6 +61,7 @@ def scaleDataV2(df,columns):
     scaler = MinMaxScaler()
     for column in columns:
         df[column] = scaler.fit_transform(df[column].values.reshape(-1,1))
+    return df
 
 def preprocess(df,seq_len):
 
@@ -131,7 +132,7 @@ def df_to3D(df, seq_len, show_fig):
     for t in range(int(length-seq_len+1)):
         x = 0
         series = np.empty([3, 10, 10])
-        for i in range(0,seq_len_divided_4,4):
+        for i in range(0,seq_len,4):
             series[x]= np_FiveToTen(t+i, npy3D)
             x+=1
         sequential_data[t] = series
@@ -293,26 +294,25 @@ def model_preprocess(seq_len):
     return train_x,train_y,validation_x,validation_y
 
 
-def model_preprocess_CNN(seq_len, supplyTotal, showFig):
+def model_preprocess_CNN(seq_len, supplyTotal, showFig, normalize):
     "Preprocesses data into groups of 3 10x10 PV matrices and aux data vectors, supplyTotal=True if include in auxDf"
     #import in supply csv + date time
 
     importSupplyDf = pd.read_csv("../Data/supplyDatav4.csv", parse_dates=["DateTime"])
     # print(importSupplyDf)
 
-    importSupplyDf["RealPower_42"] = 0.35*importSupplyDf["RealPower"]
-    importSupplyDf["RealPower_43"] = 0.4*importSupplyDf["RealPower"]
-    importSupplyDf["RealPower_44"] = 0.25*importSupplyDf["RealPower"]
-    importSupplyDf["RealPower_45"] = 0.4*importSupplyDf["RealPower4"]
-    importSupplyDf["RealPower_46"] = 0.6*importSupplyDf["RealPower4"]
-    importSupplyDf["RealPower_47"] = 0.4*importSupplyDf["RealPower20"]
-    importSupplyDf["RealPower_48"] = 0.6*importSupplyDf["RealPower20"]
+    importSupplyDf["RealPower_42"] = 0.35 * importSupplyDf["RealPower"]
+    importSupplyDf["RealPower_43"] = 0.4 * importSupplyDf["RealPower"]
+    importSupplyDf["RealPower_44"] = 0.25 * importSupplyDf["RealPower"]
+    importSupplyDf["RealPower_45"] = 0.4 * importSupplyDf["RealPower4"]
+    importSupplyDf["RealPower_46"] = 0.6 * importSupplyDf["RealPower4"]
+    importSupplyDf["RealPower_47"] = 0.4 * importSupplyDf["RealPower20"]
+    importSupplyDf["RealPower_48"] = 0.6 * importSupplyDf["RealPower20"]
 
     supplyDf = importSupplyDf.drop(["RealPower0", "RealPower32", "RealPower","RealPower4","RealPower20"], axis=1)
 
 
     # print(supplyDf)
-    # print(importSupplyDf)
     # supplyDf = importSupplyDf.drop(column_list, axis=1)
 
     print(supplyDf.columns)
@@ -345,21 +345,28 @@ def model_preprocess_CNN(seq_len, supplyTotal, showFig):
     df["target"] = df["SupplyTotal"].shift(-future)
     df = df.dropna()
 
-    # REMOVE ALL OUTLIERS
     df = df.drop(["DateTime","Year","Month","Day","Hour","Minute"],axis=1)
 
     print(df.columns)
     # print(df)
 
+    # REMOVE ALL OUTLIERS
     df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
 
     # pvDf = df.drop([])
 
+    # NORMALIZE
+
+    if normalize==True:
+        normalizeList = list(df.columns)
+        normalizeList.remove("target")
+        df = scaleDataV2(df,normalizeList)
     #PV GEN STUFF
     pvDf = df.drop(["SupplyTotal", "target"], axis=1)
     # print(supplyDfColumns)
     pvDf = pvDf.drop(["Cloudopacity", "DHI", "DNI", "GHI", "Tamb"], axis=1)
     print("COLUMNS FOR PV:", pvDf.columns)
+    # pvDf.to_csv("pvDf.csv")
 
 
 
@@ -373,8 +380,11 @@ def model_preprocess_CNN(seq_len, supplyTotal, showFig):
 
     """PV DATA SPLIT + PREPROCESSING"""
     main_df_pv, validation_df_pv = split_main_validation_df(pvDf)
+    # main_df_pv.to_csv("pvDf.csv")
 
     train_x_pv = df_to3D(main_df_pv, seq_len, show_fig=showFig)
+    print("GREATER THAN 1", np.count_nonzero(train_x_pv>1))
+
     validation_x_pv = df_to3D(validation_df_pv, seq_len, show_fig=showFig)
 
     print("Train X Shape PV: ", train_x_pv.shape)
@@ -397,10 +407,13 @@ def model_preprocess_CNN(seq_len, supplyTotal, showFig):
 
     # auxDf.to_numpy
     #--Normalize data--
-    # normalizeList = list(df.columns)
-    # scaleDataV2(df,normalizeList)
+
     # print(df.head(18))
 
+    train_x_pv[np.isnan(train_x_pv)] = 0
+    train_y[np.isnan(train_y)] = 0
+    validation_x_pv[np.isnan(validation_x_pv)] = 0
+    validation_y[np.isnan(validation_y)] = 0
     return train_x_pv, validation_x_pv, train_x_aux, validation_x_aux, train_y, validation_y
 
 
