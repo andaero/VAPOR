@@ -3,12 +3,11 @@ from SLAM import SLAM
 import numpy as np
 
 class SLAM_Layer(tf.keras.layers.Layer):
-    def __init__(self, relu):
+    def __init__(self, dense, tensorLen, relu=False):
         super(SLAM_Layer, self).__init__()
-        self.aux = SLAM(relu=relu)
-        # self.main = MainModel()
-    # def build(self, input_shape):
-    #     print("INPUT SHAPE=", input_shape)
+        self.aux = SLAM(dense, relu=relu)
+        self.tensorLen = tensorLen
+
     def call(self, x_main, x_aux):
         # watch out for batch norm - weird w training=True
 
@@ -22,7 +21,7 @@ class SLAM_Layer(tf.keras.layers.Layer):
         # c = lambda i : i<len(aux_slices)
         # x = tf.while_loop(c, self.aux(), aux_slices)
         i = 0
-        ta = tf.TensorArray(dtype=tf.float32, size=3, dynamic_size=False)
+        ta = tf.TensorArray(dtype=tf.float32, size=self.tensorLen, dynamic_size=False)
 
         for aux_slice in aux_slices:
             main_slice_squeezed= tf.squeeze(main_slices[i])
