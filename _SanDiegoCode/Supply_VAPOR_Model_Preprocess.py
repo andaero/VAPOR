@@ -359,9 +359,13 @@ def model_preprocess_CNN(seq_len, supplyTotal, showFig, normalize):
 
     if normalize==True:
         normalizeList = list(df.columns)
-        normalizeList.remove(["target", 'RealPower1', 'RealPower5', 'RealPower8', 'RealPower9', 'RealPower12','RealPower13', 'RealPower16', 'RealPower17', 'RealPower21','RealPower24', 'RealPower25', 'RealPower28', 'RealPower29',
-                              'RealPower33', 'RealPower36', 'RealPower37', 'RealPower40','RealPower41', 'RealPower_42', 'RealPower_43', 'RealPower_44','RealPower_45', 'RealPower_46', 'RealPower_47', 'RealPower_48'])
+        # remove = ["target", 'RealPower1', 'RealPower5', 'RealPower8', 'RealPower9', 'RealPower12','RealPower13', 'RealPower16', 'RealPower17', 'RealPower21','RealPower24', 'RealPower25', 'RealPower28', 'RealPower29',
+        #                       'RealPower33', 'RealPower36', 'RealPower37', 'RealPower40','RealPower41', 'RealPower_42', 'RealPower_43', 'RealPower_44','RealPower_45', 'RealPower_46', 'RealPower_47', 'RealPower_48']
+        remove = ["target"]
+        normalizeList = [e for e in normalizeList if e not in remove]
+        print("NORM LIST" , normalizeList)
         df = scaleDataV2(df,normalizeList)
+
     #PV GEN STUFF
     pvDf = df.drop(["SupplyTotal", "target"], axis=1)
     # print(supplyDfColumns)
