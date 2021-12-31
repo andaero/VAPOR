@@ -7,18 +7,22 @@ from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 
 class SLAM (tf.keras.layers.Layer):
     """Class implementation of Sigmoid Liquid Attention Matrix"""
-    def __init__(self, dense, relu=False):
+    def __init__(self, dense, matrixSize, relu=False):
         super(SLAM, self).__init__()
         if(relu == False):
             self.dense = Dense(dense, activation="linear")
-            self.dense_2 = Dense(10, activation="linear")
+            self.dense_2 = Dense(dense, activation="linear")
+            self.dense_3 = Dense(matrixSize, activation="linear")
 
         else:
-            self.dense = Dense(10, activation="relu")
+            self.dense = Dense(dense, activation="relu")
+            self.dense_2 = Dense(matrixSize, activation="linear")
+
 
     def call(self, inputs):
         x = self.dense(inputs)
         x = self.dense_2(x)
+        x = self.dense_3(x)
 
         # print(x.shape)
         TenByTen = tf.linalg.matmul(x,x, transpose_a=True) #outer product of x
