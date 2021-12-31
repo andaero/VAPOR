@@ -5,18 +5,24 @@ import numpy as np
 class SLAM_Layer(tf.keras.layers.Layer):
     def __init__(self, dense, tensorLen, relu=False):
         super(SLAM_Layer, self).__init__()
-        self.aux = SLAM(dense, relu=relu)
+        # self.SLAM = SLAM(dense, relu=relu)
+        self.dense = dense
+        self.relu = relu
         self.tensorLen = tensorLen
+    def build(self, input_shape):
+        print("BUILD SHAPE", input_shape[3])
+        self.SLAM = SLAM(self.dense, matrixSize=input_shape[3], relu=self.relu)
 
     def call(self, x_main, x_aux):
         # watch out for batch norm - weird w training=True
+
+        # print("MAIN SHAPE" , x_main.shape[3])
 
         aux_slices = tf.unstack(x_aux, axis=1) #axis=1 because 0th dimension is unknown
         main_slices = tf.unstack(x_main, axis=1) #axis=1 because 0th dimension is unknown
 
         # print("AUX SHAPE" , aux_slices)
         # print("MAIN SHAPE" , main_slices)
-
 
         # c = lambda i : i<len(aux_slices)
         # x = tf.while_loop(c, self.aux(), aux_slices)
@@ -26,7 +32,7 @@ class SLAM_Layer(tf.keras.layers.Layer):
         for aux_slice in aux_slices:
             main_slice_squeezed= tf.squeeze(main_slices[i])
 
-            outer_product = tf.linalg.matmul(main_slice_squeezed,self.aux(aux_slice))
+            outer_product = tf.linalg.matmul(main_slice_squeezed,self.SLAM(aux_slice))
             # print("MAIN SLICE SHAPE",main_slice_squeezed.shape)
             # print("AUX SLICE SHAPE",self.aux(aux_slice).shape)
 
