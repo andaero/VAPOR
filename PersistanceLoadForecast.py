@@ -8,6 +8,7 @@ import time
 from sklearn.preprocessing import MinMaxScaler
 
 from scipy import stats
+from sklearn.metrics import mean_squared_error
 
 
 
@@ -77,43 +78,30 @@ main_df = df[(df.index< last_10)]
 print(validation_df)
 print(main_df)
 
-def preprocess(df):
 
-    sequential_data = []  # this is a list that will CONTAIN the sequences
-    prev_days = deque( maxlen=seq_len)  # These will be our actual sequences. They are made with deque, which keeps the maximum length by popping out older values as new ones come in
+validation_x = main_df["TotalCampusLoad"].to_numpy()
+validation_y = main_df["target"].to_numpy()
 
-    for i in df.to_numpy():  # iterate over the values
-        prev_days.append([n for n in i[:-1]])  # store all but the target
-        if len(prev_days) == seq_len:  # make sure we have 24 sequences!
-            sequential_data.append([np.array(prev_days), i[-1]])  # append those bad boys!
 
-    random.shuffle(sequential_data)  # shuffle for good measure.
-    X = []
-    y = []
 
-    for seq, target in sequential_data:
-        X.append(seq)
-        y.append(target)
-
-    return np.array(X), y
-
-train_x, train_y = preprocess(df)
-validation_x, validation_y = preprocess(validation_df)
-
-print(f"train data: {len(train_x)}, validation: {len(validation_x)}")
-
-train_x = np.asarray(train_x)
-train_y = np.asarray(train_y)
 validation_x = np.asarray(validation_x)
 validation_y = np.asarray(validation_y)
 
-print(train_x)
-print(train_y)
-print(train_x.shape, train_y.shape, validation_x.shape, validation_y.shape)
+
+
+
+# validation_x = np.squeeze(validation_x)
+
 
 
 def mape(actual, pred):
     actual, pred = np.array(actual), np.array(pred)
     return np.mean(np.abs((actual - pred) / actual)) * 100
+
+# validation_x = np.squeeze(validation_x)
+
+print(validation_x)
+print(validation_y)
+print("RMSE:", mean_squared_error(validation_y, validation_x, squared=False))
 
 print(mape(validation_x, validation_y))

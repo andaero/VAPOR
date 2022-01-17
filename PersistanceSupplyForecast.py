@@ -116,4 +116,4 @@ def mape(actual, pred):
     actual, pred = np.array(actual), np.array(pred)
     return np.mean(np.abs((actual - pred) / actual)) * 100
 
-print(mape(validation_x, validation_y))
+print(mape(validation_y, validation_x))
