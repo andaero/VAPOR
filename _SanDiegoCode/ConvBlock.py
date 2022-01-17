@@ -7,9 +7,9 @@ class ResBlock(tf.keras.layers.Layer):
         self.n_filters = n_filters
         self.merge_input = TimeDistributed(Conv2D(n_filters, (1, 1), padding='same', activation='relu'))
         self.conv1 = TimeDistributed(Conv2D(n_filters, (filterSize,filterSize), activation="relu", padding="same"))
-        self.conv2 = TimeDistributed(Conv2D(n_filters, (filterSize,filterSize), activation="relu", padding="same"))
+        # self.conv2 = TimeDistributed(Conv2D(n_filters, (filterSize,filterSize), activation="relu", padding="same"))
         self.LayerNorm_1 = TimeDistributed(LayerNormalization())
-        self.LayerNorm_2 = TimeDistributed(LayerNormalization())
+        # self.LayerNorm_2 = TimeDistributed(LayerNormalization())
         self.add = TimeDistributed(Add())
 
 
@@ -35,13 +35,16 @@ class ConvBlock(tf.keras.layers.Layer):
         self.LayerNorm_1 = TimeDistributed(LayerNormalization())
         self.Dropout_1 = Dropout(0.2)
 
+        self.AvgPool2D_1 = TimeDistributed(AveragePooling2D(pool_size=(filterSize,filterSize)))
+
+
 
         self.T_CNN_2 = TimeDistributed(Conv2D(filter*2, (filterSize+1,filterSize+1), activation="relu", padding="same"))
         self.LayerNorm_2 = TimeDistributed(LayerNormalization())
         self.Dropout_2 = Dropout(0.2)
 
 
-        self.T_CNN_3 = TimeDistributed(Conv2D(filter, (filterSize+1,filterSize+1), activation="relu", padding="same"))
+        self.T_CNN_3 = TimeDistributed(Conv2D(filter, (filterSize,filterSize), activation="relu", padding="same"))
         self.LayerNorm_3 = TimeDistributed(LayerNormalization())
         self.Dropout_3 = Dropout(0.2)
 
@@ -49,7 +52,9 @@ class ConvBlock(tf.keras.layers.Layer):
         self.LayerNorm_4 = TimeDistributed(LayerNormalization())
         self.Dropout_4 = Dropout(0.2)
 
-        self.T_CNN_5 = TimeDistributed(Conv2D(1, (filterSize,filterSize), activation="relu", padding="same"))
+
+
+        self.T_CNN_5 = TimeDistributed(Conv2D(1, (filterSize,filterSize), activation="relu", padding="valid"))
 
 
         self.residual_block_1 = ResBlock(filter, filterSize)
@@ -60,21 +65,21 @@ class ConvBlock(tf.keras.layers.Layer):
 
     def call(self, inputs):
         x = self.T_CNN_1(inputs)
-        x = self.LayerNorm_1(x)
-        x = self.Dropout_1(x)
+        # x = self.LayerNorm_1(x)
+        # x = self.Dropout_1(x)
 
-        x = self.T_CNN_2(x)
-        x = self.LayerNorm_2(x)
-        x = self.Dropout_2(x)
+        # x = self.T_CNN_2(x)
+        # x = self.LayerNorm_2(x)
+        # x = self.Dropout_2(x)
 
 
         x = self.T_CNN_3(x)
-        x = self.LayerNorm_3(x)
-        x = self.Dropout_3(x)
-
+        # x = self.LayerNorm_3(x)
+        # x = self.Dropout_3(x)
+        # x = self.AvgPool2D_1(x)
         x = self.T_CNN_4(x)
-        x = self.LayerNorm_4(x)
-        x = self.Dropout_4(x)
+        # x = self.LayerNorm_4(x)
+        # x = self.Dropout_4(x)
 
 
         x = self.T_CNN_5(x)
@@ -89,7 +94,6 @@ class ConvBlock(tf.keras.layers.Layer):
         # x = self.Dropout_3(x)
         #
         # x = self.residual_block_4(x)
-        # # x = self.Dropout_1(x)
 
 
         return x
