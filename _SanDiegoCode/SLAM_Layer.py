@@ -10,12 +10,13 @@ class SLAM_Layer(tf.keras.layers.Layer):
         self.relu = relu
         self.tensorLen = tensorLen
     def build(self, input_shape):
+        print("OVERALL", input_shape)
         print("BUILD SHAPE", input_shape[3])
         self.SLAM = SLAM(self.dense, matrixSize=input_shape[3], relu=self.relu)
 
     def call(self, x_main, x_aux):
         # watch out for batch norm - weird w training=True
-
+        print(x_main)
         # print("MAIN SHAPE" , x_main.shape[3])
 
         aux_slices = tf.unstack(x_aux, axis=1) #axis=1 because 0th dimension is unknown
@@ -30,15 +31,18 @@ class SLAM_Layer(tf.keras.layers.Layer):
         ta = tf.TensorArray(dtype=tf.float32, size=self.tensorLen, dynamic_size=False)
 
         for aux_slice in aux_slices:
-            main_slice_squeezed= tf.squeeze(main_slices[i])
-
-            outer_product = tf.linalg.matmul(main_slice_squeezed,self.SLAM(aux_slice))
+            for main_slice in main_slices[i]:
+                # print(i)
+                main_slice_squeezed = tf.squeeze(main_slice)
+                # print(main_slice_squeezed.shape)
+                # print(i)
+                outer_product = tf.linalg.matmul(main_slice_squeezed,self.SLAM(aux_slice))
             # print("MAIN SLICE SHAPE",main_slice_squeezed.shape)
             # print("AUX SLICE SHAPE",self.aux(aux_slice).shape)
 
             # print("OUTER PRODUCT: ", outer_product)
             ta = ta.write(i, outer_product)
-            # ta = ta.write(i, main_slice_squeezed) #TESTING PURPOSES
+                # ta = ta.write(i, main_slice_squeezed) #TESTING PURPOSES
             i += 1
             # print(i)
         # print("TA:", ta)
