@@ -8,7 +8,6 @@ class ResBlock(tf.keras.layers.Layer):
         self.merge_input = TimeDistributed(Conv2D(n_filters, (1, 1), padding='same', activation='relu'))
         self.conv1 = TimeDistributed(Conv2D(n_filters, (filterSize,filterSize), activation="relu", padding="same"))
         # self.conv2 = TimeDistributed(Conv2D(n_filters, (filterSize,filterSize), activation="relu", padding="same"))
-        self.LayerNorm_1 = TimeDistributed(LayerNormalization())
         # self.LayerNorm_2 = TimeDistributed(LayerNormalization())
         self.add = TimeDistributed(Add())
 
@@ -19,7 +18,6 @@ class ResBlock(tf.keras.layers.Layer):
         if layer_in.shape[-1] != self.n_filters:
             merge_input = self.merge_input(layer_in) #kernel_initializer='he_normal' - NOT THE DEFAULT
         x = self.conv1(layer_in)
-        x = self.LayerNorm_1(x)
         # x = self.conv2(x)
         # x = self.LayerNorm_2(x)
 
@@ -85,14 +83,14 @@ class ConvBlock(tf.keras.layers.Layer):
         x = self.T_CNN_5(x)
 
         # x = self.residual_block_1(inputs)
-        # x = self.Dropout_1(x)
-        #
-        # x = self.residual_block_2(x)
-        # x = self.Dropout_2(x)
-        #
+        # # x = self.Dropout_1(x)
+        # #
+        # # x = self.residual_block_2(x)
+        # # x = self.Dropout_2(x)
+        # #
         # x = self.residual_block_3(x)
-        # x = self.Dropout_3(x)
-        #
+        # # x = self.Dropout_3(x)
+        # #
         # x = self.residual_block_4(x)
 
 

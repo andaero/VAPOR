@@ -205,6 +205,7 @@ rnn_cell = LTCCell(wiring)
 
 def plot_wiring():
     sns.set_style("white")
+    plt.rc('font', size=12)
     plt.figure(figsize=(12, 12))
     legend_handles = rnn_cell.draw_graph(layout='spiral', neuron_colors={"command": "tab:cyan"})
     plt.legend(handles=legend_handles, loc="upper center", bbox_to_anchor=(1, 1))
@@ -249,9 +250,9 @@ for BatchSize in BatchSizes:
 
             #LIQUID --> LSTM
             model.add(InputLayer(input_shape=train_x.shape[1:]))
-            model.add(RNN(rnn_cell, return_sequences=True))
-            model.add(Dropout(0.1))
-            model.add(BatchNormalization())
+            # model.add(RNN(rnn_cell, return_sequences=True))
+            # model.add(Dropout(0.1))
+            # model.add(BatchNormalization())
             for x in range(layer-1):
                 model.add(LSTM(BatchSize, return_sequences=True))
                 model.add(Dropout(0.1))
@@ -275,7 +276,6 @@ for BatchSize in BatchSizes:
 
             model.summary()
 
-            # plot_wiring()
             tensorboard = TensorBoard(log_dir=f'LiquidLSTM_Load_Logs/{NAME}', histogram_freq=1, write_images=True)
 
             filepath = "eNet-{epoch:02d}-{mean_absolute_percentage_error:.3f}"
