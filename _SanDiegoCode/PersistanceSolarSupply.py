@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import time
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.utils import shuffle
 
 from scipy import stats
@@ -32,7 +32,7 @@ df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
 # plt.show()
 
 #Create a target column for load in future
-future = 24 #predicting 24 hours in the future
+future = 25 #predicting 24 hours in the future
 seq_len = 1 #take the last 24 hours of info
 
 df["target"] = df["SupplyTotal"].shift(-future)
@@ -77,4 +77,4 @@ validation_x = numpy.squeeze(validation_x)
 
 
 print("RMSE:", math.sqrt(mean_squared_error(validation_y, validation_x)))
-
+print("Coefficient of Determination (r^2): ", r2_score(validation_y, validation_x))
