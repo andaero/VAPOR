@@ -36,7 +36,7 @@ for inputLen in inputLens:
 
                             time = datetime.now().strftime("%m-%d-%H-%M-%S")
 
-                            NAME = f"VAPOR-SLAM No Layer Norm 10x10-{SLAM_Dense_Size}-Valid Padding-ConvBlock-{ConvBlock}-FilterSize-{filterSize}-ConvBlock_2-{Conv2Bool}-{CNN_2_Unit}" \
+                            NAME = f"VAPOR-SLAM (2 LSTM) 10x10-{SLAM_Dense_Size}-Valid Padding-ResBlock-{ConvBlock}-FilterSize-{filterSize}-ConvBlock_2-{Conv2Bool}-{CNN_2_Unit}" \
                                    f"-CNN Dense-{CNN_Dense_Size}-InpLen-{inputLen}-Time-{time}"
                             # NAME = f"No attention benchmark CNN"
 
