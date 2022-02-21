@@ -348,11 +348,12 @@ def model_preprocess_CNN(seq_len, supplyTotal, showFig, normalize):
     importSupplyDf["RealPower_44"] = 0.25 * importSupplyDf["RealPower"]
     importSupplyDf["RealPower_45"] = 0.4 * importSupplyDf["RealPower4"]
     importSupplyDf["RealPower_46"] = 0.6 * importSupplyDf["RealPower4"]
-    # importSupplyDf["RealPower_47"] = 0.4 * importSupplyDf["RealPower20"]
-    # importSupplyDf["RealPower_48"] = 0.6 * importSupplyDf["RealPower20"]
-
-    # supplyDf = importSupplyDf.drop(["RealPower0", "RealPower32", "RealPower","RealPower4","RealPower20"], axis=1)
-    supplyDf = importSupplyDf.drop(["RealPower0", "RealPower32", "RealPower", "RealPower4"], axis=1)
+    if(supplyTotal):
+        supplyDf = importSupplyDf.drop(["RealPower0", "RealPower32", "RealPower", "RealPower4"], axis=1)
+    else:
+        importSupplyDf["RealPower_47"] = 0.4 * importSupplyDf["RealPower20"]
+        importSupplyDf["RealPower_48"] = 0.6 * importSupplyDf["RealPower20"]
+        supplyDf = importSupplyDf.drop(["RealPower0", "RealPower32", "RealPower","RealPower4","RealPower20"], axis=1)
 
 
 
@@ -412,7 +413,11 @@ def model_preprocess_CNN(seq_len, supplyTotal, showFig, normalize):
         df = scaleDataV2(df,normalizeList)
 
     #PV GEN STUFF
-    pvDf = df.drop(["target"], axis=1)
+    if(supplyTotal==False):
+        pvDf = df.drop(["target", "SupplyTotal"], axis=1)
+    else:
+        pvDf = df.drop(["target"], axis=1)
+
     # print(supplyDfColumns)
     pvDf = pvDf.drop(["Cloudopacity", "DHI", "DNI", "GHI", "Tamb", "Hour", "Month", "Day", "Zenith", "DewPoint"], axis=1)
     print("COLUMNS FOR PV:", pvDf.columns)
@@ -422,7 +427,8 @@ def model_preprocess_CNN(seq_len, supplyTotal, showFig, normalize):
 
     #AUX DF STUFF
     auxDf = df.drop(supplyDfColumns, axis=1)
-    auxDf = auxDf.drop(["SupplyTotal"], axis=1)
+    if(supplyTotal==True):
+        auxDf = auxDf.drop(["SupplyTotal"], axis=1)
 
 
     #Remove outliers

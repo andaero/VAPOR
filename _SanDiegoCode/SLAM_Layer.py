@@ -10,13 +10,13 @@ class SLAM_Layer(tf.keras.layers.Layer):
         self.relu = relu
         self.tensorLen = tensorLen
     def build(self, input_shape):
-        print("OVERALL", input_shape)
-        print("BUILD SHAPE", input_shape[3])
+        # print("OVERALL", input_shape)
+        # print("BUILD SHAPE", input_shape[3])
         self.SLAM = SLAM(self.dense, matrixSize=input_shape[3], relu=self.relu)
 
     def call(self, x_main, x_aux):
         # watch out for batch norm - weird w training=True
-        print(x_main)
+        # print(x_main)
         # print("MAIN SHAPE" , x_main.shape[3])
 
         aux_slices = tf.unstack(x_aux, axis=1) #axis=1 because 0th dimension is unknown
