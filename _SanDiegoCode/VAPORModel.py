@@ -73,7 +73,7 @@ class VAPOR_Model(tf.keras.Model):
 
         x = self.LSTM_1(x)
         # x = self.Layer_Norm_1(x)
-        x = self.LSTM_2(x)
+        x = self.LSTM_2(x) #--RMSE 548.52 uses this
         # x = self.Layer_Norm_2(x)
         x = self.LSTM_3(x)
         # x = self.Layer_Norm_3(x)
@@ -93,23 +93,23 @@ class VAPOR_Model(tf.keras.Model):
 
     """def call(self, inputs):
         x_main, x_aux = inputs
-        x = tf.expand_dims(x_main, axis=0)
+        # x = tf.expand_dims(x_main, axis=0)
 
-        x = self.T_CNN_1(x)
+        # x = self.T_CNN_1(x)
         # x = self.Layer_Norm(x)
         # x = self.Dropout_1(x)
-        x = self.T_CNN_2(x)
+        # x = self.T_CNN_2(x)
 
-        x = self.AvgPool2D(x)
-        x = self.T_Flatten(x)
-        x = self.Dense_1(x)
-
-        x = self.LSTM_1(x)
-        # x = self.Layer_Norm_1(x)
-        x = self.LSTM_2(x)
-        # x = self.Layer_Norm_2(x)
-        x = self.LSTM_3(x)
-        # x = self.Layer_Norm_3(x)
+        # x = self.AvgPool2D(x)
+        x = self.T_Flatten(x_main)
+        # # x = self.Dense_1(x)
+        #
+        # x = self.LSTM_1(x)
+        # # x = self.Layer_Norm_1(x)
+        # x = self.LSTM_2(x)
+        # # x = self.Layer_Norm_2(x)
+        # x = self.LSTM_3(x)
+        # # x = self.Layer_Norm_3(x)
 
 
         x = self.Flatten_LSTM(x)
