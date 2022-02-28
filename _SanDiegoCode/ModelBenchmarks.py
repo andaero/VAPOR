@@ -1,11 +1,13 @@
 import numpy
 import math
-
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, load_model
 
 from VAPORModel import VAPOR_Model
 import numpy as np
+from numpy import savetxt
+
 from sklearn.metrics import mean_squared_error, r2_score
 
 from Supply_VAPOR_Model_Preprocess import model_preprocess_CNN, model_preprocess, model_preprocess_CNN_Twenty
@@ -40,6 +42,8 @@ maxReal = 0
 diff = 0
 total = 0
 for i in range (validation_x_pv.shape[0]):
+# for i in range(150):
+
     print(i)
 
     val_pv = numpy.expand_dims(validation_x_pv[i], axis=0)
@@ -55,11 +59,51 @@ for i in range (validation_x_pv.shape[0]):
     #     maxPred = pred
     #     maxReal = validation_y[i]
     prediction.append(pred)
+
+SMALL_SIZE = 10
+MEDIUM_SIZE = 13
+LARGE_SIZE = 15
+def PredictionVsReal():
+    plt.figure(figsize=(8,5))
+    plt.rcParams["font.family"] = "Sans"
+
+    plt.rc('font', size=SMALL_SIZE)
+    plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+
+    plt.xlabel("Time(hours)", fontsize=MEDIUM_SIZE)
+    plt.ylabel("Energy Generation(kwh)", fontsize=MEDIUM_SIZE)
+
+    #plt.legend()
+
+
+
+    #Prediction line
+    plt.plot(prediction[90:150], color="darkturquoise", label="Prediction")
+
+    # Real line
+    plt.plot(validation_y[90:150], color="darkorange", label="Real")
+
+    plt.legend()
+
+    plt.title("Comparison Between Predicted and Real Energy Generation", fontsize=LARGE_SIZE)
+    # plt.savefig("Graphs/SupplyGraphPredvReal.png")
+
+    plt.show()
+
+PredictionVsReal()
+
+npPred = np.array(prediction)
+print(npPred)
+npVal = np.array(validation_y)
+savetxt('pred.csv', npPred, fmt='%f')
+savetxt('real.csv', npVal, fmt='%f')
+
 # print("Max error", maxError)
 # print("Max pred", maxPred)
 # print("Max real ", maxReal)
-print("RMSE:", mean_squared_error(validation_y, prediction, squared=False))
-print("Coefficient of Determination (r^2): ", r2_score(validation_y, prediction))
-print("Total diff: ", diff)
-print("Total energy: ", total)
+# print("RMSE:", mean_squared_error(validation_y, prediction, squared=False))
+# print("Coefficient of Determination (r^2): ", r2_score(validation_y, prediction))
+# print("Total diff: ", diff)
+# print("Total energy: ", total)
 
